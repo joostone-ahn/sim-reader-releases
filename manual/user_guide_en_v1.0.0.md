@@ -1,53 +1,48 @@
 # SIM Card Reader — User Guide
 
-> Version: v2.0.0  
+> Version: v1.0.0  
 > Last updated: 2026-05-13
 
 ---
 
 ## Table of Contents
 
-1. [Overview](#1-overview)
+1. [Launch](#1-launch)
 2. [Screen Layout](#2-screen-layout)
-3. [Installation & Launch](#3-installation--launch)
-4. [Connecting to a Reader](#4-connecting-to-a-reader)
-5. [Browsing SIM Files](#5-browsing-sim-files)
-6. [Reading Files](#6-reading-files)
-7. [Decoded Views](#7-decoded-views)
-8. [ADM Verification](#8-adm-verification)
-9. [Writing to Files](#9-writing-to-files)
-10. [BER-TLV Files (URSP)](#10-ber-tlv-files-ursp)
-11. [Export & Offline Mode](#11-export--offline-mode)
-12. [Troubleshooting](#12-troubleshooting)
+3. [Connecting](#3-connecting)
+4. [Reading Files](#4-reading-files)
+5. [Decoded Views](#5-decoded-views)
+6. [ADM Verification](#6-adm-verification)
+7. [Writing to Files](#7-writing-to-files)
+8. [BER-TLV Files (URSP)](#8-ber-tlv-files-ursp)
+9. [Export & Offline Mode](#9-export--offline-mode)
+10. [Troubleshooting](#10-troubleshooting)
 
 ---
 
-## 1. Overview
+## 1. Launch
 
-SIM Card Reader is a web-based application for reading, writing, and decoding SIM/USIM/ISIM card files via a PC/SC smart card reader. Launch the application and it opens automatically in your browser.
+### Requirements
 
-**Key capabilities:**
-- Read and auto-decode 200+ EF files across MF, ADF.USIM, and ADF.ISIM
-- Write to EF files with ARR-based access control enforcement
-- BER-TLV tag-based read/write (URSP, IMSConfigData, etc.)
-- URSP rule tree decoding (3GPP TS 24.526)
-- Full file system dump → JSON + Excel auto-export
-- Offline dump loading (browse previous dumps without a SIM card)
+- PC/SC compatible smart card reader (e.g. HID OMNIKEY 3x21)
+- SIM card
+
+### How to Run
+
+Double-click the exe file. The browser opens automatically at `http://127.0.0.1:8082`.
 
 ---
 
 ## 2. Screen Layout
 
-Launch the application and the browser opens automatically at `http://127.0.0.1:8082`.
-
 ### Header Bar
 
 | Element | Description |
 |---------|-------------|
-| 📡 SIM Card Reader | App title |
-| Reader dropdown | Lists available PC/SC readers |
-| 🔌 Connect | Initiates connection to the selected reader |
-| ICCID / IMSI / MSISDN | Subscriber info read from SIM after connection |
+| 🗂️ Load Dump | Load previous dump.json (offline mode) |
+| 🔌 Connect | Connect to selected reader |
+| ICCID / IMSI / MSISDN / HPLMNwAcT / IMPI / IMPU | Card info read from SIM |
+| 📂 READ ALL FILES | Read entire file system + export |
 | 🔐 VERIFY ADM | Opens ADM key verification popup |
 | ADM1–4 dots | Gray = not verified, Green = verified |
 
@@ -56,57 +51,20 @@ Launch the application and the browser opens automatically at `http://127.0.0.1:
 | Panel | Description |
 |-------|-------------|
 | 🗂️ SIM Files (left) | File tree browser |
-| 📄 File Contents (right) | Displays content of the selected file (Decode/Raw toggle) |
+| 📄 File Contents (right) | Selected file content (Decode/Raw toggle) |
 
 ---
 
-## 3. Installation & Launch
+## 3. Connecting
 
-### Requirements
+1. Insert SIM card into PC/SC reader
+2. Select reader from the **Reader** dropdown (default: reader 0)
+3. Click **🔌 Connect**
 
-- **Python 3.10+**
-- PC/SC compatible smart card reader (e.g. HID OMNIKEY 3x21)
-- SIM card
-
-### macOS / Linux
-
-```bash
-git clone https://github.com/joostone-ahn/sim-reader.git
-cd sim-reader
-bash run/run.command
-```
-
-Or double-click `run/run.command`. On first run, a virtual environment is created and dependencies are installed automatically.
-
-### Windows (EXE)
-
-Download the latest exe from [Releases](https://github.com/joostone-ahn/sim-reader-releases/releases) and run it.
-
----
-
-## 4. Connecting to a Reader
-
-### Selecting a Reader
-
-1. Insert a SIM card into the PC/SC reader
-2. Select the reader from the **Reader** dropdown (default: reader 0)
-
-### Connection Sequence
-
-Click **🔌 Connect** to start the automatic connection sequence:
-
-1. Connect to PC/SC reader and initialize card
-2. Select MF → Read EF.ICCID
-3. Select ADF.USIM → Read EF.IMSI, EF.MSISDN, EF.HPLMNwAcT
-4. Select ADF.ISIM → Read EF.IMPI, EF.IMPU
-5. Display card info in header
-
-When connection completes:
-- Button changes to **⚡ Connected**
-- File tree becomes active
-- ADM verification area appears
-
-### Error Handling
+On connection, the tool automatically:
+- Initializes card → reads EF.ICCID, EF.IMSI, EF.MSISDN, EF.HPLMNwAcT, EF.IMPI, EF.IMPU
+- Displays card info in header
+- Activates file tree
 
 | Error | Cause |
 |-------|-------|
@@ -115,87 +73,81 @@ When connection completes:
 
 ---
 
-## 5. Browsing SIM Files
+## 4. Reading Files
+
+### Individual Read
+
+Click any file in the tree to read it. Read method is determined automatically:
+
+| Structure | Method |
+|-----------|--------|
+| Transparent (TF) | READ BINARY |
+| Linear Fixed / Cyclic (LF/CF) | READ RECORD (sequential) |
+| BER-TLV | RETRIEVE DATA (auto-continuation on SW=62xx) |
+
+### Read All Files
+
+Click **READ ALL FILES** to dump the entire file system (200–300 files across MF, ADF.USIM, ADF.ISIM, approximately 30 seconds). Auto-exports to `logs/<ICCID>/` on completion.
 
 ### File Tree
 
-The SIM Files panel displays files grouped by application:
+Files are grouped by application:
 
 - **MF** — Master File (ICCID, DIR, ARR)
-- **ADF.USIM** — USIM application files (includes sub-DFs: DF.5GS, DF.GSM-ACCESS, etc.)
-- **ADF.ISIM** — ISIM application files
+- **ADF.USIM** — USIM files (includes sub-DFs: DF.5GS, DF.GSM-ACCESS, etc.)
+- **ADF.ISIM** — ISIM files
 
-### File Entry Information
+Each file entry shows:
 
-Each file entry displays:
-- FID (4-digit hex)
-- File name
-- Structure type abbreviation (TF = Transparent, LF = Linear Fixed, CF = Cyclic, BER-TLV)
+| Column | Description |
+|--------|-------------|
+| File Name | File/folder name (tree indentation) |
+| FID | File Identifier (hex) |
+| Type | TF, LF, CF, BER-TLV, DF, ADF |
+| ARR | Access Rule Reference record number |
+| Size | File size (bytes) |
+| Rec# | Number of records |
 
-### Collapsing / Expanding
+### Collapse / Expand
 
-- Click any DF header to collapse or expand its child EFs
-- Use **▼ Expand All / ▶ Collapse All** buttons to toggle all at once
+- ▼ 📂 / ▶ 📁 icons to collapse/expand individual DFs
+- **Expand All / Collapse All** buttons for bulk toggle
+- Default: MF sub-DFs collapsed, ADF.USIM/ADF.ISIM expanded
 
 ### Status Dots
 
 | Color | Meaning |
 |-------|---------|
 | ⚪ Gray | Not yet read |
-| 🟢 Green | Read successfully (clicking again shows cached value instantly) |
-| 🔴 Red | Read failed (clicking again retries) |
-
----
-
-## 6. Reading Files
-
-### Individual Read
-
-Click any file in the tree to read it. The read method is determined automatically by file structure:
-
-- **Transparent**: READ BINARY
-- **Linear Fixed / Cyclic**: READ RECORD (sequential read of each record)
-- **BER-TLV**: RETRIEVE DATA (automatic continuation on SW=62xx)
-
-### Read All Files
-
-Click **READ ALL FILES** to dump the entire file system using `fsdump_custom --json`:
-
-- Walks through all DFs (MF, ADF.USIM, ADF.ISIM) and reads every EF
-- Outputs raw hex + decoded JSON simultaneously
-- Auto-exports to `logs/<ICCID>/` on completion
+| 🟢 Green | Read OK (re-click shows cached value instantly) |
+| 🔴 Red | Read failed (re-click retries) |
 
 ### Caching
 
-Once a file is read, it is cached:
-- Clicking the same file again displays the cached value instantly
-- After a write operation, the cache is cleared and the file is automatically re-read
+- Read files are cached; re-click shows instantly
+- After write, cache is cleared → auto re-read
 
 ---
 
-## 7. Decoded Views
+## 5. Decoded Views
 
 ### Decode / Raw Toggle
 
-Use the toggle at the top of the File Contents panel to switch display modes:
-
-- **🔍 Decode**: Structured view tailored to the file type
+- **🔍 Decode**: Structured view per file type
 - **🔢 Raw**: Original hex data
 
-### File-Specific Decode Views
+### File-Specific Decoding
 
 | File Type | Display Format |
 |-----------|---------------|
 | PLMN files (PLMNwAcT, OPLMNwAcT, HPLMNwAcT, FPLMN, EHPLMN) | MCC / MNC / AcT table |
-| Service tables (UST, IST, EST) | Service number + name + True/False status |
-| ACC (Access Control Class) | Class 0–15 + True/False status |
-| ARR (Access Rule Reference) | Read/Update/Write/Activate/Deactivate conditions table |
-| URSP | Tree-formatted rule display (Precedence, TD, RSD) |
-| Other EFs | JSON structure (pySim-based decoding) |
+| Service tables (UST, IST, EST) | Service number + name + True/False |
+| ACC (Access Control Class) | Class 0–15 + True/False |
+| ARR (Access Rule Reference) | Read/Update/Write/Activate/Deactivate conditions |
+| URSP | Tree-formatted rules (Precedence, TD, RSD) |
+| Other EFs | JSON (pySim-based) |
 
 ### Error Display
-
-When a read fails, the SW code and its description are shown:
 
 | SW | Description |
 |----|-------------|
@@ -204,40 +156,39 @@ When a read fails, the SW code and its description are shown:
 | 6981 | Command incompatible |
 | 6983 | Authentication blocked |
 | 6700 | Wrong length |
+| 6A83 | Record not found |
+| 6A84 | Not enough memory |
+| 6D00 | INS not supported |
+| 6E00 | Class not supported |
 
-**On SW=6982**: The file's ARR access conditions are displayed alongside the error, helping identify which ADM key is required.
+> On SW=6982, the file's ARR access conditions (Read/Update) are shown alongside the error, identifying which ADM key is needed.
 
 ### Copy Button
 
-Click **📋 Copy** to copy the current view to clipboard:
-- Table views: TSV format (paste directly into Excel)
-- JSON views: Formatted JSON text
-- Raw view: Hex string
+📋 Copy copies the current view to clipboard:
+- Table: TSV (paste into Excel)
+- JSON: Formatted text
+- Raw: Hex string
 
 ---
 
-## 8. ADM Verification
+## 6. ADM Verification
 
-### Opening the ADM Popup
+### How to Verify
 
-Click the **🔐 VERIFY ADM** button in the header bar.
+1. Click **🔐 VERIFY ADM** in the header
+2. Enter the required ADM key (16 hex chars, 8 bytes)
+3. Click **Verify**
 
-### ADM1–ADM4 Verification
-
-The popup shows four independent ADM key input fields:
-- Each ADM key is 16 hex characters (8 bytes)
-- Character count shown in real-time (e.g., `(12/16)`)
-- **Verify** button enables when 16 valid hex characters are entered
-- On successful verification:
-  - Button turns green and shows "Verified"
-  - Corresponding ADM dot in the header turns green
-  - Write button state is immediately refreshed
+On success:
+- Button turns green "Verified", input becomes read-only
+- Header dot turns green
+- Previously failed files (SW=6982) are auto re-read + dump re-saved
 
 ### Auto-fill (test_profile.json)
 
-If `test_profile.json` exists and contains a profile matching the current MSISDN, ADM keys are automatically filled.
+Place `test_profile.json` in the same folder as the exe. If MSISDN matches, ADM keys are auto-filled:
 
-File format:
 ```json
 {
   "profiles": [
@@ -249,78 +200,74 @@ File format:
 }
 ```
 
-### Write Button Control
+### Write Button State
 
 | Condition | Write Button | Tooltip |
 |-----------|-------------|---------|
-| ALWAYS | ✅ Enabled | (none) |
-| ADM verified | ✅ Enabled | (none) |
+| ALWAYS | ✅ Enabled | — |
+| ADM verified | ✅ Enabled | — |
 | ADM not verified | ❌ Disabled | "🔐 ADM1 verification required" |
 | NEVER | ❌ Disabled | "🚫 Write not allowed (NEVER)" |
 | No ARR info | ❌ Disabled | "🔐 ARR info not available" |
 
 ---
 
-## 9. Writing to Files
+## 7. Writing to Files
 
 ### Prerequisites
 
-1. The file must be read first (loads current data and metadata)
-2. Write availability is determined by ARR access conditions
+- File must be read first
+- ADM verification may be required depending on ARR conditions
 
 ### Editor Types
 
-The appropriate editor is automatically selected based on file type:
+Automatically selected by file type:
 
 #### Hex Editor (default)
 
-- Direct hex input
-- Real-time byte count display (e.g., `(20/20)`)
-- Write button enables only when data length matches expected file size
-- **↩ Restore** button reverts to the original value
+- Direct hex input, real-time byte count
+- Write enables only when length matches file size
+- **↩ Restore** to revert
 
 #### PLMN Editor
 
-Applies to PLMNwAcT, OPLMNwAcT, HPLMNwAcT, FPLMN, and EHPLMN files:
+For PLMNwAcT, OPLMNwAcT, HPLMNwAcT, FPLMN, EHPLMN:
 
-- **Table mode**: MCC / MNC / AcT input table
+- **Table mode**: Type MCC / MNC / AcT directly
+  - Empty rows → FFFFFF encoding
+  - MCC/MNC must both be filled or both empty
 - **Hex mode**: Direct hex editing
-- **Table ↔ Hex toggle**: Bidirectional sync
+- Table ↔ Hex bidirectional sync
 
 #### Service Table Editor (UST/IST/EST)
 
-- **Table mode**: Service number + name + True/False dropdown
-- **Hex mode**: Direct hex editing
-- 3GPP standard service names loaded automatically
+- Service number + 3GPP standard name + True/False dropdown
+- Table ↔ Hex bidirectional sync
 
 #### ACC Editor
 
-- True/False dropdown for each of Class 0–15
-- Automatically encoded as 16-bit bitmap
+- True/False dropdown for Class 0–15
+- Auto-encoded as 16-bit bitmap
 
 ### Executing a Write
 
-Once you modify a value, click **✏️ Write** to:
-
-1. Send UPDATE BINARY or UPDATE RECORD
-2. After 1 second, the file is automatically re-read to confirm
-3. On success: "✅ Done" is displayed
+Click **✏️ Write** → UPDATE BINARY/RECORD sent → auto re-read after 1s → "✅ Done"
 
 ### Record Selection (Linear Fixed)
 
-For Linear Fixed files, a **Record Number** dropdown allows selecting and writing individual records.
+Record Number dropdown to select and write individual records.
 
 ---
 
-## 10. BER-TLV Files (URSP)
+## 8. BER-TLV Files (URSP)
 
 ### Reading
 
-BER-TLV files (e.g., EF.URSP) are read using RETRIEVE DATA:
+1. Request tag 0x80 data (RETRIEVE DATA)
+2. On SW=62xx, continue fetching remaining chunks
+3. Decode as URSP rule tree per 3GPP TS 24.526
 
-1. Request tag 0x80 data
-2. On SW=62xx, continue with repeated RETRIEVE DATA to fetch remaining chunks
-3. All chunks are concatenated and decoded as a URSP rule tree per 3GPP TS 24.526
+> If URSP data is empty, the raw value reads as `8001FF` (tag=80, length=01, value=FF), and the Decode view shows `(empty — 0xFF)`.
 
 ### URSP Tree View
 
@@ -343,23 +290,27 @@ URSP Rules
 
 ### BER-TLV Write
 
-1. **Tag selection**: Choose a tag from the dropdown
-2. **Hex data editing**: Full TLV format (tag + BER-length + value)
-3. **Validation**: Tag match + BER-length verification
-4. **Write execution**: DELETE DATA + SET DATA in sequence
-5. **↩ Restore**: Reverts to the original TLV value
+1. **Tag selection**: Choose existing tag or new tag 0x80
+2. **Hex editing**: Full TLV format — tag (80) + BER-length + value
+3. **Validation** (real-time):
+   - `Hex data must start with tag 0x80` — first byte doesn't match selected tag
+   - `Length mismatch: expected N bytes, got M bytes` — BER-length doesn't match actual value length
+4. **Write**: DELETE DATA → SET DATA sequence
+5. **↩ Restore**: Revert to original TLV value
+
+> The Raw view value and the Write popup initial value are the same Full TLV hex.
 
 ### URSP Rule Analyzer
 
-External URSP analysis tool: 🔗 https://huggingface.co/spaces/Joostone/ursp-rule-analyzer
+External tool: 🔗 https://huggingface.co/spaces/Joostone/ursp-rule-analyzer
 
 ---
 
-## 11. Export & Offline Mode
+## 9. Export & Offline Mode
 
 ### Auto-Export
 
-When Read All Files completes, data is automatically saved to `logs/<ICCID>/`:
+On Read All Files completion, auto-saved to `logs/<ICCID>/` (next to the exe):
 
 | File | Content |
 |------|---------|
@@ -369,42 +320,21 @@ When Read All Files completes, data is automatically saved to `logs/<ICCID>/`:
 
 ### Offline Mode (Load Dump)
 
-Click **Load Dump** to load a previously saved `dump.json`:
+Click **Load Dump** to load a previous `dump.json`:
 - Browse previous dumps without a SIM card
 - File tree + decode views work identically
-- ADM verification state is restored from the dump
+- ADM verification state restored
 
 ---
 
-## 12. Troubleshooting
+## 10. Troubleshooting
 
-### "Reader not found"
-
-- Verify the PC/SC reader is connected via USB
-- macOS: Run `pcsctest` to check reader recognition
-- Windows: Check Device Manager for smart card reader
-
-### "No card in reader"
-
-- Ensure the SIM card is properly inserted in the reader
-- Check that card contacts are clean
-
-### Write button disabled
-
-- Hover over the button to see the tooltip — it shows which ADM key is required
-- Verify the correct ADM key in the ADM popup
-- Files with NEVER condition cannot be written
-
-### Connection timeout
-
-- Possible poor contact between reader and card
-- Disconnect and reconnect USB
-- Try a different reader slot
-
-### pySim-related errors
-
-- Try reinstalling: `pip install -e src/pysim`
-- Verify Python 3.10+ version
+| Symptom | Solution |
+|---------|----------|
+| "Reader not found" | Check PC/SC reader USB connection; verify in Device Manager |
+| "No card in reader" | Check SIM card insertion and contact cleanliness |
+| Write button disabled | Hover button → tooltip shows required ADM key; verify it |
+| Connection timeout | Reader-card contact issue; reconnect USB, try different slot |
 
 ---
 
