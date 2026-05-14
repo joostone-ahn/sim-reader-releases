@@ -16,7 +16,7 @@ This tool **auto-decodes** everything into readable formats (PLMN tables, servic
 
 ## ⚡ Key Features
 
-- **Full file system dump** — reads 200+ EF files across MF, ADF.USIM, ADF.ISIM in a single pass
+- **Full file system dump** — reads 200+ EF files across MF, ADF.USIM, ADF.ISIM in a single pass (~20 seconds)
 - **Auto-decoding** — structured JSON output for PLMN, service tables, URSP, ACC, ARR, and more
 - **ARR security conditions** — shows required ADM key before writing; auto-enforces access control
 - **BER-TLV read/write** — tag-based RETRIEVE DATA + DELETE/SET DATA (URSP, IMSConfigData)
@@ -29,15 +29,15 @@ This tool **auto-decodes** everything into readable formats (PLMN tables, servic
 
 ## 💻 Download
 
-Download the latest exe from [Releases](../../releases).
+Download the latest exe from [Releases](https://github.com/joostone-ahn/sim-reader-releases/releases).
 
 ---
 
 ## 📖 How to Use
 
 See the User Guide for detailed instructions:
-- [English](manual/user_guide_en_v1.0.0.md)
-- [한국어](manual/user_guide_kr_v1.0.0.md)
+- [English](https://github.com/joostone-ahn/sim-reader-releases/blob/main/manual/user_guide_en_v1.0.0.md)
+- [한국어](https://github.com/joostone-ahn/sim-reader-releases/blob/main/manual/user_guide_kr_v1.0.0.md)
 
 ---
 

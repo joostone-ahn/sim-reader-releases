@@ -87,7 +87,7 @@ Click any file in the tree to read it. Read method is determined automatically:
 
 ### Read All Files
 
-Click **READ ALL FILES** to dump the entire file system (200–300 files across MF, ADF.USIM, ADF.ISIM, approximately 30 seconds). Auto-exports to `logs/<ICCID>/` on completion.
+Click **READ ALL FILES** to dump the entire file system (200–300 files across MF, ADF.USIM, ADF.ISIM, approximately 20 seconds). Auto-exports to `logs/<ICCID>/` on completion.
 
 ### File Tree
 

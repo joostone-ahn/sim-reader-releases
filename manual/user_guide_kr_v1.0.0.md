@@ -87,7 +87,7 @@ exe 파일을 더블클릭하면 브라우저가 자동으로 열리며 `http://
 
 ### 전체 읽기 (Read All Files)
 
-**READ ALL FILES** 버튼 클릭 시 MF, ADF.USIM, ADF.ISIM의 모든 EF를 한 번에 읽습니다 (200~300개, 약 30초 소요). 완료 후 자동으로 `logs/<ICCID>/`에 내보내기됩니다.
+**READ ALL FILES** 버튼 클릭 시 MF, ADF.USIM, ADF.ISIM의 모든 EF를 한 번에 읽습니다 (200~300개, 약 20초 소요). 완료 후 자동으로 `logs/<ICCID>/`에 내보내기됩니다.
 
 ### 파일 트리
 
