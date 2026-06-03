@@ -65,6 +65,8 @@ See the User Guide for detailed instructions:
 
 © 2026 JUSEOK AHN <ajs3013@lguplus.co.kr>. All rights reserved.
 
-### Third-party
+This software is provided free of charge for personal and internal use.
+You may not modify, distribute, sublicense, or sell copies of this software
+without explicit written permission from the author.
 
-`pySim` by [Osmocom](https://gitea.osmocom.org/sim-card/pysim) — licensed under GPLv2.
+[pySim](https://gitea.osmocom.org/sim-card/pysim) by Osmocom — GPLv2 (included as source for EF decoding).
