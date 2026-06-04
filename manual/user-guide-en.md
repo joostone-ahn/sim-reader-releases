@@ -1,7 +1,7 @@
 # SIM Card Reader — User Guide
 
-> Version: v1.0.0  
-> Last updated: 2026-05-13
+> Based on: v1.1.0  
+> Last updated: 2026-06-04
 
 ---
 
@@ -338,4 +338,4 @@ Click **Load Dump** to load a previous `dump.json`:
 
 ---
 
-**© 2026 JUSEOK AHN. All rights reserved.**
+**© 2026 JUSEOK AHN <ajs3013@lguplus.co.kr>. Licensed under GPLv2.**

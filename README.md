@@ -2,7 +2,7 @@
 
 A web-based tool for reading, writing, and decoding SIM/USIM/ISIM card files via PC/SC smart card reader.
 
-![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red)
+![License](https://img.shields.io/badge/License-GPLv2-blue)
 
 ---
 
@@ -31,13 +31,17 @@ This tool **auto-decodes** everything into readable formats (PLMN tables, servic
 
 Download the latest exe from [Releases](https://github.com/joostone-ahn/sim-reader-releases/releases).
 
+## 🔧 Source Code
+
+This project is open source (GPLv2). Source code is included in this repository and also available as a zip download from each [Release](https://github.com/joostone-ahn/sim-reader-releases/releases).
+
 ---
 
 ## 📖 How to Use
 
 See the User Guide for detailed instructions:
-- [English](https://github.com/joostone-ahn/sim-reader-releases/blob/main/manual/user_guide_en_v1.0.0.md)
-- [한국어](https://github.com/joostone-ahn/sim-reader-releases/blob/main/manual/user_guide_kr_v1.0.0.md)
+- [English](https://github.com/joostone-ahn/sim-reader-releases/blob/main/manual/user-guide-en.md)
+- [한국어](https://github.com/joostone-ahn/sim-reader-releases/blob/main/manual/user-guide-kr.md)
 
 ---
 
@@ -52,6 +56,15 @@ See the User Guide for detailed instructions:
 
 ---
 
+## 📝 Change History
+
+| Version | Date | Description |
+|---------|------|-------------|
+| v1.1.0 | 2026-06-04 | License changed to GPLv2; source code published |
+| v1.0.0 | 2026-05-13 | Initial release |
+
+---
+
 ## 👤 Author
 
 **JUSEOK AHN (안주석)**  
@@ -63,10 +76,8 @@ See the User Guide for detailed instructions:
 
 ## 📄 License
 
-© 2026 JUSEOK AHN <ajs3013@lguplus.co.kr>. All rights reserved.
+This project is licensed under the **GNU General Public License v2.0 (GPLv2)**.
 
-This software is provided free of charge for personal and internal use.
-You may not modify, distribute, sublicense, or sell copies of this software
-without explicit written permission from the author.
+See [LICENSE](LICENSE) for the full license text.
 
-[pySim](https://gitea.osmocom.org/sim-card/pysim) by Osmocom — GPLv2 (included as source for EF decoding).
+This software includes [pySim](https://gitea.osmocom.org/sim-card/pysim) by Osmocom (GPLv2).

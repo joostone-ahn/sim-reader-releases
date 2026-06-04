@@ -1,0 +1,1946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIM Card Reader v1.0.0</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);height:100vh;color:#333;display:flex;flex-direction:column;overflow:hidden}
+.container{max-width:100%;padding:10px 12px 0 12px;flex:1;overflow:hidden;display:flex;flex-direction:column}
+.header{background:rgba(255,255,255,0.95);border-radius:10px;padding:10px 24px;margin-bottom:8px;box-shadow:0 4px 16px rgba(0,0,0,0.1)}
+.header h1{font-size:1.3rem;color:#2c3e50;font-weight:700}
+.btn{padding:6px 14px;border:none;border-radius:6px;cursor:pointer;font-size:0.78rem;font-weight:600;transition:all 0.2s;display:inline-flex;align-items:center;justify-content:center;gap:4px;line-height:1}
+.btn-primary{background:linear-gradient(45deg,#667eea,#764ba2);color:white}
+.btn-primary:hover{transform:translateY(-1px)}
+.btn-danger{background:linear-gradient(45deg,#e74c3c,#c0392b);color:white}
+.btn-success{background:linear-gradient(45deg,#27ae60,#2ecc71);color:white}
+.btn-dark{background:linear-gradient(45deg,#333,#555);color:white}
+.btn-warning{background:linear-gradient(45deg,#e67e22,#f39c12);color:white}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.input-sm{padding:5px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.78rem;font-family:'Menlo','Consolas','DejaVu Sans Mono','Courier New',monospace}
+.input-sm:focus{outline:none;border-color:#667eea}
+.status{font-size:0.74rem;padding:3px 8px;border-radius:4px}
+.status-ok{background:#d4edda;color:#155724}
+.status-err{background:#f8d7da;color:#721c24}
+.status-warn{background:#fff3cd;color:#856404}
+.sim-info-cards{display:flex;gap:10px}
+.info-card{background:linear-gradient(135deg,#f5f5f5,#eeeeee);border-radius:6px;padding:4px 14px;border-left:3px solid #667eea;display:flex;align-items:center;gap:8px}
+.info-label{font-size:0.76rem;color:#888;font-weight:600;text-transform:uppercase;white-space:nowrap;padding-right:4px;display:inline-block;width:100px}
+.info-value{font-size:0.76rem;font-family:'Menlo','Consolas','DejaVu Sans Mono','Courier New',monospace;color:#2c3e50}
+.card{background:rgba(255,255,255,0.95);border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);overflow:hidden}
+.panel-title{background:linear-gradient(45deg,#667eea,#764ba2);color:white;padding:10px 12px;font-size:0.85rem;font-weight:700;display:flex;align-items:center;min-height:36px;box-sizing:border-box}
+.file-table{width:100%;border-collapse:collapse;font-size:0.76rem;table-layout:auto}
+.file-table thead th{background:#a8c4e0;color:#1a3a5c;padding:4px 8px;position:sticky;top:0;z-index:2;font-weight:600;font-size:0.72rem;font-family:'Menlo','Consolas','DejaVu Sans Mono','Courier New',monospace;text-align:left;line-height:1.3}
+.file-table thead th:first-child{padding-left:12px}
+.file-table thead th:last-child{padding-right:12px}
+.file-table tbody tr{border-bottom:1px solid #eee;cursor:pointer}
+.file-table tbody tr:hover{background:#eef2ff}
+.file-table tbody tr.selected{outline:2px solid #667eea}
+.file-table tbody tr.df-row{background:#d4edda;line-height:1.3}
+.file-table tbody tr.df-sub-row{background:#fff8e1;line-height:1.3}
+.file-table td{padding:3px 8px;font-family:'Menlo','Consolas','DejaVu Sans Mono','Courier New',monospace;font-size:0.74rem;line-height:1.3}
+.file-table td:first-child{padding-left:12px}
+.file-table td:last-child{padding-right:12px}
+#fileListScroll:focus{outline:none}
+.file-table .cc{text-align:left}
+.file-table .cr{text-align:left}
+.data-pre{font-family:'Menlo','Consolas','DejaVu Sans Mono','Courier New',monospace;font-size:0.74rem;white-space:pre-wrap;word-break:break-all;color:#333;background:#f8f9fa;padding:8px;margin:0}
+.rec-table{width:100%;border-collapse:collapse;font-size:0.74rem}
+.rec-table th{background:#a8c4e0;color:#1a3a5c;padding:4px 10px;font-size:0.72rem;font-family:'Menlo','Consolas','DejaVu Sans Mono','Courier New',monospace;font-weight:600;position:sticky;top:0;z-index:1;white-space:nowrap;text-align:left;line-height:1.3}
+.rec-table td{padding:3px 10px;font-family:'Menlo','Consolas','DejaVu Sans Mono','Courier New',monospace;font-size:0.74rem;border-bottom:1px solid #eee;line-height:1.3}
+.rec-table td:first-child{text-align:center;width:38px;white-space:nowrap;color:#667eea;font-weight:600}
+.rec-table th:first-child{text-align:center}
+.overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:100;justify-content:center;align-items:center}
+.overlay.show{display:flex}
+.popup{background:white;border-radius:10px;width:710px;max-height:80vh;overflow:auto;box-shadow:0 8px 32px rgba(0,0,0,0.3);resize:both;min-width:400px;min-height:200px}
+#btnRead:disabled,#btnWrite:disabled,#btnCopy:disabled,#btnAdm:disabled,#btnReadAll:disabled{opacity:0.4;cursor:not-allowed;pointer-events:auto}
+#btnWrite[data-tip]{position:relative}
+.custom-tooltip{position:fixed;background:linear-gradient(135deg,#e67e22,#d35400);color:#fff;font-size:0.68rem;font-weight:600;padding:5px 12px;border-radius:6px;white-space:nowrap;z-index:9999;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);display:none}
+.search-ph::placeholder{color:rgba(255,255,255,0.4);font-style:italic;font-size:0.72rem}
+.mono{font-family:'Menlo','Consolas','DejaVu Sans Mono','Courier New',monospace;-webkit-text-size-adjust:100%}
+.toggle-switch{display:flex;background:#e9ecef;border-radius:4px;cursor:pointer;overflow:hidden;width:fit-content}
+.toggle-label{padding:4px 0;font-size:0.68rem;font-weight:600;color:#888;transition:all 0.2s;user-select:none;text-align:center;width:68px;border-right:1px solid #ccc;line-height:1.2}
+.toggle-label:last-child{border-right:none}
+.toggle-label.toggle-active{background:#6b7eec;color:white}
+.tree-display{padding:12px;background:#f8f9fa;border-radius:4.8px;overflow:auto;margin:0;font-family:'Menlo','Consolas','DejaVu Sans Mono','Courier New',monospace;font-size:0.74rem;white-space:pre;line-height:1.3;color:#333}
+.json-display{padding:12px;background:#f8f9fa;border-radius:4.8px;overflow:auto}
+.json-hl{margin:0;font-family:'Menlo','Consolas','DejaVu Sans Mono','Courier New',monospace;font-size:0.74rem;white-space:pre;line-height:1.3}
+.json-key{color:#881391}.json-string{color:#0451a5}.json-number{color:#098658}.json-boolean{color:#0000ff}.json-null{color:#808080}
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header" style="display:flex;align-items:center;justify-content:space-between">
+        <h1>📖 SIM Card Reader<span style="font-size:0.55rem;font-weight:400;color:#999;margin-left:6px;vertical-align:baseline">v1.0.0</span></h1>
+        <a href="https://github.com/joostone-ahn/sim-reader-releases" target="_blank" style="display:inline-flex;align-items:center;gap:5px;padding:0 14px;height:28px;background:#24292e;color:white;border-radius:6px;font-size:0.75rem;font-weight:700;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;text-decoration:none;line-height:1">
+            <svg height="14" width="14" viewBox="0 0 16 16" fill="white"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            GitHub
+        </a>
+    </div>
+    <div class="header" style="display:flex;flex-direction:column;gap:0;margin-bottom:8px;padding:8px 12px">
+        <div style="display:flex;align-items:center;gap:8px">
+            <button class="btn btn-primary" onclick="document.getElementById('loadDumpInput').click()" style="width:145px;white-space:nowrap;height:32px;flex-shrink:0">🗂️ Load Dump</button>
+            <input type="file" id="loadDumpInput" accept=".json" style="display:none" onchange="loadDumpFile(this)">
+            <button class="btn btn-primary" onclick="connectReader()" style="width:145px;white-space:nowrap;height:32px;flex-shrink:0">🔌 Connect</button>
+            <span id="connectStatus" class="status"></span>
+            <span id="actionStatus" class="status"></span>
+            <span id="exportStatus" class="status"></span>
+        </div>
+        <hr style="border:none;border-top:1px solid #e0e0e0;margin:8px 0">
+        <div style="display:flex;align-items:stretch;gap:0">
+            <div style="width:1px;background:#ddd;margin:0 12px 0 0;flex-shrink:0"></div>
+            <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px 10px">
+                <div class="info-card"><div class="info-label">ICCID</div><div class="info-value" id="infoIccid">-</div></div>
+                <div class="info-card"><div class="info-label">IMSI</div><div class="info-value" id="infoImsi">-</div></div>
+                <div class="info-card"><div class="info-label">MSISDN</div><div class="info-value" id="infoMsisdn">-</div></div>
+                <div class="info-card"><div class="info-label" style="text-transform:none">HPLMNwAcT</div><div class="info-value" id="infoHplmn">-</div></div>
+                <div class="info-card"><div class="info-label">IMPI</div><div class="info-value" id="infoImpi">-</div></div>
+                <div class="info-card"><div class="info-label">IMPU</div><div class="info-value" id="infoImpu">-</div></div>
+            </div>
+            <div style="width:1px;background:#ddd;margin:0 12px;flex-shrink:0"></div>
+            <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:140px">
+                <button class="btn" id="btnReadAll" onclick="readAllFiles()" disabled style="width:140px;white-space:nowrap;height:26px;font-size:0.68rem;background:#f0f2f5;color:#555;border:1px solid #ccc;border-radius:5px;cursor:pointer;justify-content:flex-start;padding:0 10px">📂 READ ALL FILES</button>
+                <hr style="border:none;border-top:1px solid #eee;width:100%;margin:4px 0">
+                <span id="readAllStatus" style="font-size:0.60rem;color:#ccc;white-space:nowrap;min-height:14px;line-height:14px">Card reader not connected</span>
+            </div>
+            <div style="width:1px;background:#ddd;margin:0 12px;flex-shrink:0"></div>
+            <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:140px">
+                <button class="btn" id="btnAdm" onclick="openAdmPopup()" disabled style="width:140px;white-space:nowrap;height:26px;font-size:0.68rem;background:#f0f2f5;color:#555;border:1px solid #ccc;border-radius:5px;cursor:pointer;justify-content:center;padding:0 10px">🔐 VERIFY ADM</button>
+                <hr style="border:none;border-top:1px solid #eee;width:100%;margin:4px 0">
+                <div id="admDots" style="display:flex;gap:6px;font-size:0.60rem;font-family:Consolas,monospace;color:#ccc;min-height:14px;line-height:14px">
+                    <span><span id="admDot1" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ccc;margin-right:2px;vertical-align:middle"></span>ADM1</span>
+                    <span><span id="admDot2" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ccc;margin-right:2px;vertical-align:middle"></span>ADM2</span>
+                    <span><span id="admDot3" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ccc;margin-right:2px;vertical-align:middle"></span>ADM3</span>
+                    <span><span id="admDot4" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ccc;margin-right:2px;vertical-align:middle"></span>ADM4</span>
+                </div>
+            </div>
+            <div style="width:1px;background:#ddd;margin:0 0 0 12px;flex-shrink:0"></div>
+        </div>
+    </div>
+    <div class="card" style="padding:12px;margin-bottom:0;flex:1;display:flex;flex-direction:column;min-height:0">
+        <div id="panelContainer" style="display:flex;flex:1;min-height:0">
+            <div id="leftPanel" class="card" style="flex:5;display:flex;flex-direction:column;min-width:200px">
+                <div class="panel-title" style="min-height:36px;padding:6px 12px">
+                    <span>🗂️ File System</span>
+                    <span onclick="expandAll()" style="cursor:pointer;font-size:0.64rem;color:rgba(255,255,255,0.7);white-space:nowrap;padding:2px 6px;background:rgba(255,255,255,0.15);border-radius:3px;margin-left:14px">▼ Expand All</span>
+                    <span onclick="collapseAll()" style="cursor:pointer;font-size:0.64rem;color:rgba(255,255,255,0.7);white-space:nowrap;padding:2px 6px;background:rgba(255,255,255,0.15);border-radius:3px;margin-left:4px">▶ Collapse All</span>
+                    <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+                        <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.2);border-radius:5px;padding:2px 8px;height:24px;width:250px">
+                            <span style="font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.9);white-space:nowrap;min-width:56px;text-align:center">Search</span>
+                            <input type="text" id="fileFilter" oninput="applyFilter()" placeholder="FID or File Name" style="border:none;background:transparent;color:white;font-size:0.72rem;font-family:'Menlo','Consolas','DejaVu Sans Mono','Courier New',monospace;flex:1;min-width:0;outline:none" class="search-ph">
+                            <span id="filterClear" onclick="clearFilter()" style="display:none;color:white;cursor:pointer;font-size:0.9rem;line-height:1;font-weight:700;flex-shrink:0">✕</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="fileListScroll" style="flex:1;overflow:auto" tabindex="0">
+                    <table class="file-table" style="table-layout:auto"><thead><tr>
+                        <th>File Name</th>
+                        <th>FID</th><th>Type</th><th>ARR</th><th>Size</th><th>Rec#</th>
+                    </tr></thead><tbody id="fileListBody"></tbody></table>
+                </div>
+            </div>
+            <div id="resizer" style="width:8px;cursor:col-resize;background:transparent;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                <div style="width:3px;height:40px;background:#ccc;border-radius:2px"></div>
+            </div>
+            <div id="rightPanel" style="flex:5;display:flex;flex-direction:column;min-height:0;min-width:200px">
+                <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
+                    <div class="panel-title" style="min-height:36px;padding:6px 12px">
+                        <span>📄 File Contents</span>
+                        <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+                            <div class="toggle-switch" id="inlineDecodeToggle" style="display:none">
+                                <span class="toggle-label toggle-active" id="inline-toggle-decode" onclick="switchInlineView('decode')">🔍 Decode</span>
+                                <span class="toggle-label" id="inline-toggle-raw" onclick="switchInlineView('raw')">🔢 Raw</span>
+                            </div>
+                            <div class="toggle-switch" id="plmnToggle" style="display:none">
+                                <span class="toggle-label toggle-active" id="plmn-toggle-table" onclick="switchPlmnView('table')">🔍 Decode</span>
+                                <span class="toggle-label" id="plmn-toggle-raw" onclick="switchPlmnView('raw')">🔢 Raw</span>
+                            </div>
+                            <button id="btnCopy" onclick="copyInlineDecode(this)" disabled style="display:none;padding:3px 8px;font-size:0.68rem;font-weight:600;border:none;border-radius:5px;cursor:pointer;background:rgba(255,255,255,0.2);color:rgba(255,255,255,0.9);min-width:60px;transition:all 0.2s">📋 Copy</button>
+                            <button id="btnWrite" onclick="onWriteClick()" disabled style="display:none;padding:3px 8px;font-size:0.68rem;font-weight:600;border:none;border-radius:5px;cursor:pointer;background:rgba(255,255,255,0.2);color:rgba(255,255,255,0.9);min-width:60px;transition:all 0.2s;white-space:nowrap">✏️ Write</button>
+                        </div>
+                    </div>
+                    <div id="inlineDecodeBox" style="flex:1;overflow:auto;padding:0">
+                        <pre id="inlineTreeView" class="tree-display" style="min-height:40px;margin:8px"></pre>
+                        <div id="inlineJsonView" class="json-display" style="display:none;min-height:40px;margin:8px"></div>
+                        <div id="inlineRawView" class="data-pre" style="display:none;min-height:40px;margin:8px"></div>
+                        <textarea id="inlineTreeRaw" style="display:none"></textarea>
+                        <textarea id="inlineJsonRaw" style="display:none"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Verification Popup -->
+<div id="verifyOverlay" class="overlay" onclick="if(event.target===this)closeAdmPopup()">
+<div class="popup" style="width:480px;min-width:400px;min-height:auto;resize:none">
+    <div class="panel-title" style="border-radius:10px 10px 0 0">
+        <span>🔐 ADM Verification</span>
+        <button onclick="closeAdmPopup()" style="margin-left:auto;background:none;border:none;color:white;font-size:1.1rem;cursor:pointer">✕</button>
+    </div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:8px">
+        <div id="admRow1" class="adm-row" data-key="ADM1">
+            <div style="display:flex;align-items:center;gap:6px;background:#f0f2f5;border-radius:6px;padding:4px 10px">
+                <span style="font-size:0.72rem;font-weight:600;color:#888;min-width:42px">ADM1</span>
+                <input type="text" class="adm-input" placeholder="16-digit hex" oninput="updateAdmRow(this)" style="border:none;background:transparent;flex:1;font-size:0.78rem;font-family:Consolas,monospace;padding:3px 4px">
+                <span class="adm-count" style="font-size:0.66rem;color:#bbb;white-space:nowrap">(0/16)</span>
+                <button class="btn btn-dark adm-verify-btn" onclick="doAdmVerify(this,'ADM1')" disabled style="padding:4px 10px;font-size:0.72rem;min-width:70px">Verify</button>
+            </div>
+        </div>
+        <div id="admRow2" class="adm-row" data-key="ADM2">
+            <div style="display:flex;align-items:center;gap:6px;background:#f0f2f5;border-radius:6px;padding:4px 10px">
+                <span style="font-size:0.72rem;font-weight:600;color:#888;min-width:42px">ADM2</span>
+                <input type="text" class="adm-input" placeholder="16-digit hex" oninput="updateAdmRow(this)" style="border:none;background:transparent;flex:1;font-size:0.78rem;font-family:Consolas,monospace;padding:3px 4px">
+                <span class="adm-count" style="font-size:0.66rem;color:#bbb;white-space:nowrap">(0/16)</span>
+                <button class="btn btn-dark adm-verify-btn" onclick="doAdmVerify(this,'ADM2')" disabled style="padding:4px 10px;font-size:0.72rem;min-width:70px">Verify</button>
+            </div>
+        </div>
+        <div id="admRow3" class="adm-row" data-key="ADM3">
+            <div style="display:flex;align-items:center;gap:6px;background:#f0f2f5;border-radius:6px;padding:4px 10px">
+                <span style="font-size:0.72rem;font-weight:600;color:#888;min-width:42px">ADM3</span>
+                <input type="text" class="adm-input" placeholder="16-digit hex" oninput="updateAdmRow(this)" style="border:none;background:transparent;flex:1;font-size:0.78rem;font-family:Consolas,monospace;padding:3px 4px">
+                <span class="adm-count" style="font-size:0.66rem;color:#bbb;white-space:nowrap">(0/16)</span>
+                <button class="btn btn-dark adm-verify-btn" onclick="doAdmVerify(this,'ADM3')" disabled style="padding:4px 10px;font-size:0.72rem;min-width:70px">Verify</button>
+            </div>
+        </div>
+        <div id="admRow4" class="adm-row" data-key="ADM4">
+            <div style="display:flex;align-items:center;gap:6px;background:#f0f2f5;border-radius:6px;padding:4px 10px">
+                <span style="font-size:0.72rem;font-weight:600;color:#888;min-width:42px">ADM4</span>
+                <input type="text" class="adm-input" placeholder="16-digit hex" oninput="updateAdmRow(this)" style="border:none;background:transparent;flex:1;font-size:0.78rem;font-family:Consolas,monospace;padding:3px 4px">
+                <span class="adm-count" style="font-size:0.66rem;color:#bbb;white-space:nowrap">(0/16)</span>
+                <button class="btn btn-dark adm-verify-btn" onclick="doAdmVerify(this,'ADM4')" disabled style="padding:4px 10px;font-size:0.72rem;min-width:70px">Verify</button>
+            </div>
+        </div>
+        <div id="admStatus" style="display:none;font-size:0.72rem;padding:2px 10px"></div>
+    </div>
+</div>
+</div>
+
+<!-- Write Popup -->
+<div id="writeOverlay" class="overlay" onclick="if(event.target===this)closeWritePopup()">
+<div class="popup" style="width:640px">
+    <div class="panel-title" style="border-radius:10px 10px 0 0">
+        <span>✏️ Write EF</span>
+        <span id="writeEfName" style="margin-left:8px;font-weight:400;font-size:0.78rem;opacity:0.9"></span>
+        <button onclick="closeWritePopup()" style="margin-left:auto;background:none;border:none;color:white;font-size:1.1rem;cursor:pointer">✕</button>
+    </div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+        <div id="writeRecordRow" style="display:none">
+            <div style="font-size:0.76rem;font-weight:600;color:#555;margin-bottom:4px">Record Number</div>
+            <select id="writeRecordSelect" onchange="onWriteRecordChange()" style="padding:4px 8px;border:1px solid #ddd;border-radius:6px;font-size:0.78rem;font-family:Consolas,monospace"></select>
+        </div>
+        <div id="writeServiceTable" style="display:none">
+            <div style="font-size:0.76rem;font-weight:600;color:#555;margin-bottom:4px">Service Table</div>
+            <div id="writeServiceList" style="max-height:400px;overflow-y:auto;border:1px solid #ddd;border-radius:6px;font-size:0.72rem"></div>
+        </div>
+        <div id="writeAccSection" style="display:none">
+            <div style="font-size:0.76rem;font-weight:600;color:#555;margin-bottom:4px">Access Control Class</div>
+            <div id="writeAccList" style="max-height:400px;overflow-y:auto;border:1px solid #ddd;border-radius:6px;font-size:0.74rem"></div>
+        </div>
+        <div id="writePlmnSection" style="display:none;flex-direction:column;flex:1">
+            <div style="display:flex;align-items:center;margin-bottom:4px">
+                <span style="font-size:0.76rem;font-weight:600;color:#555">PLMN List</span>
+                <span style="margin-left:auto;display:flex;gap:0;font-size:0.66rem">
+                    <span id="plmnModeTable" class="svc-mode-active" onclick="switchPlmnWriteMode('table')" style="padding:3px 10px;cursor:pointer;border:1px solid #ddd;border-radius:4px 0 0 4px;background:#667eea;color:white">Table</span>
+                    <span id="plmnModeHex" onclick="switchPlmnWriteMode('hex')" style="padding:3px 10px;cursor:pointer;border:1px solid #ddd;border-left:none;border-radius:0 4px 4px 0;background:white;color:#555">Hex</span>
+                </span>
+            </div>
+            <div id="writePlmnList" style="flex:1;overflow-y:auto;border:1px solid #ddd;border-radius:6px;font-size:0.72rem"></div>
+            <div id="writePlmnHex" style="display:none">
+                <textarea id="writePlmnHexInput" rows="8" oninput="onPlmnHexInput()" style="width:100%;font-family:Menlo,Consolas,monospace;font-size:0.82rem;padding:8px;border:1px solid #ddd;border-radius:6px;resize:vertical"></textarea>
+            </div>
+        </div>
+        <div id="writeHexRow">
+            <div style="font-size:0.76rem;font-weight:600;color:#555;margin-bottom:4px">Hex Data <span id="writeEfSize" style="font-weight:400;color:#888"></span></div>
+            <div style="position:relative">
+                <textarea id="writeHexInput" rows="12" style="width:100%;font-family:Consolas,monospace;font-size:0.82rem;padding:8px 8px 20px 8px;border:1px solid #ddd;border-radius:6px;resize:vertical" oninput="checkWriteChanged()"></textarea>
+                <span id="writeHexCount" style="position:absolute;right:10px;bottom:8px;font-size:0.66rem;color:#bbb"></span>
+            </div>
+        </div>
+        <div id="writeTlvSection" style="display:none">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+                <span style="font-size:0.76rem;font-weight:600;color:#555">Tag</span>
+                <select id="writeTlvTagSelect" onchange="onTlvTagChange()" style="padding:4px 8px;border:1px solid #ddd;border-radius:6px;font-size:0.78rem;font-family:Consolas,monospace"></select>
+            </div>
+            <div style="font-size:0.76rem;font-weight:600;color:#555;margin-bottom:4px">Hex Data <span style="font-weight:400;color:#888">— Full TLV format: tag (80) + BER length + value</span></div>
+            <textarea id="writeTlvHexInput" rows="8" oninput="checkTlvChanged()" style="width:100%;font-family:Consolas,monospace;font-size:0.82rem;padding:8px;border:1px solid #ddd;border-radius:6px;resize:vertical"></textarea>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:8px">
+                <button class="btn btn-primary" id="writeTlvWriteBtn" onclick="tlvWrite()" disabled style="padding:4px 10px;font-size:0.72rem;font-weight:600;min-width:80px">✏️ Write</button>
+                <span id="writeTlvStatus" style="font-size:0.72rem"></span>
+                <span style="margin-left:auto">
+                    <button class="btn" id="writeTlvRestoreBtn" onclick="tlvRestore()" disabled style="padding:4px 10px;font-size:0.72rem;border:1px solid #ccc;border-radius:4px;background:white;color:#555">↩ Restore</button>
+                </span>
+            </div>
+            <div style="margin-top:12px;padding:8px 10px;background:#f8f9fa;border-radius:6px;font-size:0.70rem;color:#666">
+                <span style="font-weight:600">Note:</span> Use URSP Rule Analyzer to encode/decode URSP rule hex values.<br>
+                <a href="https://huggingface.co/spaces/Joostone/ursp-rule-analyzer" target="_blank" style="color:#667eea">🔗 https://huggingface.co/spaces/Joostone/ursp-rule-analyzer</a>
+            </div>
+        </div>
+        <div id="writeButtonRow" style="display:flex;align-items:center;margin-top:4px">
+            <span style="display:flex;align-items:center;gap:6px">
+                <button class="btn btn-primary" id="writeSubmitBtn" onclick="submitWrite()" disabled style="padding:4px 10px;font-size:0.72rem;font-weight:600;min-width:80px">✏️ Write</button>
+                <span id="writeStatus" style="font-size:0.72rem"></span>
+            </span>
+            <span style="margin-left:auto">
+                <button class="btn" id="writeRestoreBtn" onclick="restoreOrigHex()" disabled style="padding:4px 10px;font-size:0.72rem;border:1px solid #ccc;border-radius:4px;background:white;color:#555">↩ Restore</button>
+            </span>
+        </div>
+    </div>
+</div>
+</div>
+<div style="height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center"><span style="font-size:0.66rem;color:rgba(255,255,255,0.5)">Copyright © 2026 JUSEOK AHN &lt;ajs3013@lguplus.co.kr&gt; All rights reserved.</span></div>
+
+<div id="customTooltip" class="custom-tooltip"></div>
+
+<script>
+let dumpData=null,selectedPath=null,selectedFd=null,sortedEntries=[],writeOrigHex='',writeExpectedSize=0;
+let admVerified={ADM1:false,ADM2:false,ADM3:false,ADM4:false};
+let admKeys={ADM1:'',ADM2:'',ADM3:'',ADM4:''};
+let isOfflineMode=false;
+let _collapsedDFs={};
+let _readCount=0,_readElapsed='';
+function _countReadFiles(){
+    if(!dumpData||!dumpData.files)return 0;
+    var c=0;for(var p in dumpData.files){var fd=dumpData.files[p];if(fd&&!fd.error&&fd.bytes)c++;}return c;
+}
+function _updateReadStatus(){
+    document.getElementById('readAllStatus').textContent='✅ '+_readCount+' files'+(_readElapsed?' ('+_readElapsed+')':'');
+}
+/* Get best verified ADM key/value for the currently selected file's update condition */
+function _getVerifiedAdm(){
+    if(selectedPath){
+        var cond=getArrCondition(selectedPath,'update_erase');
+        if(cond&&cond.type==='adm'){
+            var vals=(cond.value||'').split(' | ');
+            for(var i=0;i<vals.length;i++){var k=vals[i].trim();if(admVerified[k])return admKeys[k];}
+        }
+    }
+    for(var k in admVerified){if(admVerified[k])return admKeys[k];}return'';
+}
+function _getVerifiedAdmType(){
+    if(selectedPath){
+        var cond=getArrCondition(selectedPath,'update_erase');
+        if(cond&&cond.type==='adm'){
+            var vals=(cond.value||'').split(' | ');
+            for(var i=0;i<vals.length;i++){var k=vals[i].trim();if(admVerified[k])return k;}
+        }
+    }
+    for(var k in admVerified){if(admVerified[k])return k;}return'';
+}
+async function api(u,b){try{const r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})});return await r.json();}catch(e){console.error('API error:',u,e);return{success:false,error:e.message};}}
+function setStatus(id,t,c){const e=document.getElementById(id);e.className='status status-'+c;e.textContent=t;e.style.display=t?'':'none';}
+
+/* === Custom Tooltip === */
+(function(){
+    var tip=document.getElementById('customTooltip');
+    document.addEventListener('mouseover',function(e){
+        var el=e.target.closest('[data-tip]');
+        if(el&&el.getAttribute('data-tip')){
+            tip.textContent=el.getAttribute('data-tip');
+            tip.style.display='block';
+            var r=el.getBoundingClientRect();
+            var tipW=tip.offsetWidth,tipH=tip.offsetHeight;
+            var left=r.left+r.width/2-tipW/2;
+            if(left<4)left=4;
+            if(left+tipW>window.innerWidth-4)left=window.innerWidth-tipW-4;
+            var top=r.bottom+6;
+            if(top+tipH>window.innerHeight-4)top=r.top-tipH-6;
+            tip.style.left=left+'px';
+            tip.style.top=top+'px';
+        }
+    });
+    document.addEventListener('mouseout',function(e){
+        var el=e.target.closest('[data-tip]');
+        if(el)tip.style.display='none';
+    });
+})();
+
+/* === Unified button/toggle state control === */
+/* Get ARR condition for a specific access mode (update_erase, read_search_compare, etc.) */
+function getArrCondition(path, accessMode){
+    if(!dumpData||!dumpData.files)return null;
+    var fd=dumpData.files[path];if(!fd||!fd.fcp)return null;
+    var sar=fd.fcp.security_attrib_referenced;if(!sar)return null;
+    var arrFid=sar.ef_arr_file_id,arrRec=sar.ef_arr_record_nr;if(!arrFid||!arrRec)return null;
+    var parts=path.split('/'),arrPath=null;
+    for(var i=parts.length-1;i>=1;i--){var c=parts.slice(0,i).join('/')+'/EF.ARR';if(dumpData.files[c]){arrPath=c;break;}}
+    if(!arrPath)arrPath='MF/EF.ARR';
+    var arrFd=dumpData.files[arrPath];if(!arrFd||!arrFd.body||!Array.isArray(arrFd.body))return null;
+    var record=arrFd.body[arrRec-1];if(!record||!Array.isArray(record))return null;
+    for(var r=0;r<record.length;r++){
+        var rule=record[r];if(!Array.isArray(rule)||rule.length<2)continue;
+        var am=rule[0];if(!am||!am.access_mode)continue;
+        if(am.access_mode.indexOf(accessMode)<0)continue;
+        var cond=rule[1];if(!cond)continue;
+        if(cond.always===null||cond.always===undefined&&Object.keys(cond).length===0)return{type:'always'};
+        if(cond.never===null)return{type:'never'};
+        if(cond.control_reference_template){var t=cond.control_reference_template;if(t.toUpperCase().indexOf('ADM')===0)return{type:'adm',value:t};return{type:'pin',value:t};}
+        if(cond.or&&Array.isArray(cond.or)){
+            var adms=[],hasNonAdm=false;
+            for(var k=0;k<cond.or.length;k++){var c=cond.or[k];if(c.control_reference_template){var cv=c.control_reference_template;if(cv.toUpperCase().indexOf('ADM')===0)adms.push(cv);else hasNonAdm=true;}}
+            if(adms.length>0&&!hasNonAdm)return{type:'adm',value:adms.join(' | ')};
+            if(hasNonAdm&&adms.length===0)return{type:'pin',value:'PIN'};
+            if(hasNonAdm&&adms.length>0)return{type:'pin_or_adm',value:cond.or.map(function(c){return c.control_reference_template||'?';}).join(' | ')};
+        }
+        return{type:'unknown'};
+    }
+    return null;
+}
+/* Check if required ADM types for a condition are all verified */
+function isAdmSatisfied(cond){
+    if(!cond||cond.type!=='adm')return true;
+    var vals=(cond.value||'').split(' | ');
+    // For OR conditions, any one verified is enough
+    for(var i=0;i<vals.length;i++){
+        var k=vals[i].trim();
+        if(admVerified[k])return true;
+    }
+    return false;
+}
+function updateDetailButtons(opts){
+    var hideAll=!opts.isEf||opts.is6A82;
+    var hasError=opts.is6982||opts.is6A82;
+    var noContent=opts.fd&&opts.fd.error&&!opts.fd.bytes;
+    var btn=document.getElementById('btnWrite');
+    if(hideAll){
+        btn.style.display='none';
+        document.getElementById('btnCopy').style.display='none';
+        document.getElementById('inlineDecodeToggle').style.display='none';
+        document.getElementById('plmnToggle').style.display='none';
+        btn.removeAttribute('data-tip');
+        return;
+    }
+    if(noContent){
+        document.getElementById('btnCopy').style.display='none';
+    }else{
+        document.getElementById('btnCopy').style.display='';
+        document.getElementById('btnCopy').disabled=false;
+    }
+    var cond=getArrCondition(opts.path,'update_erase');
+    var needsAdm=cond&&cond.type==='adm';
+    var isNever=cond&&cond.type==='never';
+    if(!opts.is6982&&!opts.isOffline){
+        btn.style.display='';
+        if(isNever){
+            btn.disabled=true;
+            btn.setAttribute('data-tip','Write not allowed (NEVER)');
+        }else if(needsAdm&&!isAdmSatisfied(cond)){
+            btn.disabled=true;
+            var tip='🔐 '+( cond.value||'ADM')+' verification required';
+            btn.setAttribute('data-tip',tip);
+        }else{
+            btn.disabled=false;
+            btn.removeAttribute('data-tip');
+        }
+    }else{
+        btn.style.display='none';
+        btn.removeAttribute('data-tip');
+    }
+}
+function resetDetailButtons(){
+    document.getElementById('btnWrite').style.display='none';
+    document.getElementById('btnWrite').disabled=true;
+    document.getElementById('btnWrite').removeAttribute('data-tip');
+    document.getElementById('btnCopy').style.display='none';
+    document.getElementById('inlineDecodeToggle').style.display='none';
+    document.getElementById('plmnToggle').style.display='none';
+}
+
+async function connectReader(){
+    setStatus('connectStatus','Connecting...','warn');
+    setStatus('actionStatus','','');
+    setStatus('exportStatus','','');
+    // Reset immediately on click
+    dumpData=null;selectedPath=null;selectedFd=null;sortedEntries=[];isOfflineMode=false;
+    admVerified={ADM1:false,ADM2:false,ADM3:false,ADM4:false};
+    admKeys={ADM1:'',ADM2:'',ADM3:'',ADM4:''};
+    clearFilter();
+    document.getElementById('fileListBody').innerHTML='';
+    document.getElementById('inlineRawView').innerHTML='<span style="color:#999">(no data)</span>';
+    document.getElementById('inlineTreeView').innerHTML='';document.getElementById('inlineTreeView').style.display='none';
+    document.getElementById('inlineJsonView').innerHTML='';document.getElementById('inlineJsonView').style.display='none';
+    var _old;
+    _old=document.getElementById('inlinePlmnTable');if(_old)_old.remove();
+    _old=document.getElementById('inlineSvcTable');if(_old)_old.remove();
+    _old=document.getElementById('inlineAccTable');if(_old)_old.remove();
+    _old=document.getElementById('inlineArrTable');if(_old)_old.remove();
+    resetDetailButtons();
+    document.getElementById('btnReadAll').disabled=true;
+    document.getElementById('readAllStatus').textContent='Read & Export all EFs';
+    document.getElementById('btnAdm').disabled=true;
+    for(var d=1;d<=4;d++)document.getElementById('admDot'+d).style.background='#ccc';
+    document.getElementById('admDots').style.color='#888';
+    document.getElementById('readAllStatus').style.color='#888';
+    document.getElementById('infoIccid').textContent='-';
+    document.getElementById('infoImsi').textContent='-';
+    document.getElementById('infoMsisdn').textContent='-';
+    document.getElementById('infoHplmn').textContent='-';
+    document.getElementById('infoImpi').textContent='-';
+    document.getElementById('infoImpu').textContent='-';
+    const r=await api('/sim/connect',{reader:0});
+    if(r.success){setStatus('connectStatus','✅ Connected','ok');
+        document.getElementById('infoIccid').textContent=r.info.iccid||'-';
+        document.getElementById('infoImsi').textContent=r.info.imsi||'-';
+        document.getElementById('infoMsisdn').textContent=r.info.msisdn||'-';
+        document.getElementById('infoHplmn').textContent=r.info.hplmn||'-';
+        document.getElementById('infoImpi').textContent=r.info.impi||'-';
+        document.getElementById('infoImpu').textContent=r.info.impu||'-';
+        document.getElementById('btnReadAll').disabled=false;
+        document.getElementById('readAllStatus').textContent='Read & Export all EFs';
+        document.getElementById('readAllStatus').style.color='#888';
+        document.getElementById('btnAdm').disabled=false;
+        document.getElementById('btnAdm').textContent='🔐 VERIFY ADM';
+        document.getElementById('admDots').style.color='#888';
+    }else{setStatus('connectStatus','❌ '+r.error,'err');}
+}
+
+const SMAP={transparent:'TF',linear_fixed:'LF',cyclic:'CF',ber_tlv:'BER-TLV',no_info_given:''};
+function pathCols(fd){
+    var p=fd.path||[];
+    return p[p.length-1]||'MF';
+}
+function getStruct(fd){var fdb=((fd.fcp||{}).file_descriptor||{}).file_descriptor_byte||{};return fdb.structure||'';}
+function getFid(fd){return((fd.fcp||{}).file_identifier||'').toUpperCase();}
+function getFidPath(path){
+    if(!dumpData||!dumpData.files||!path)return '';
+    var fd=dumpData.files[path];
+    if(!fd)return '';
+    var fid=((fd.fcp||{}).file_identifier||'').toUpperCase();
+    if(fid==='7FFF'||(!fid&&(fd.fcp||{}).df_name))return 'AID';
+    return fid;
+}
+function getFt(fd){var fdb=((fd.fcp||{}).file_descriptor||{}).file_descriptor_byte||{};var ft=fdb.file_type==='df'?'DF':(fdb.file_type?'EF':'');if(!ft){var p=fd.path||[];var last=p[p.length-1]||'';if(last.startsWith('EF.'))ft='EF';else if(last.startsWith('DF.'))ft='DF';}return ft;}
+
+function sortKey(path,fd){
+    var group;
+    if(path==='MF')group='0a';
+    else if(path.startsWith('MF/EF.'))group='0b';
+    else if(path.startsWith('MF/DF.GSM'))group='0c_gsm';
+    else if(path.startsWith('MF/DF.TELECOM'))group='0c_tel';
+    else if(path.startsWith('MF/DF.'))group='0c_zzz';
+    else if(path.startsWith('MF/ADF.USIM'))group='1';
+    else if(path.startsWith('MF/ADF.ISIM'))group='2';
+    else group='6';
+    var parts=path.split('/'),depth=parts.length;
+    var fid=((fd.fcp||{}).file_identifier||'ffff').toLowerCase();
+    var sub='0_'+fid;
+    if(group>='1'&&group<='2'){
+        if(depth===2){sub='0_0000';}
+        else if(depth===3&&!parts[2].startsWith('DF.')){sub='1_'+fid;}
+        else{var subDf=parts[2]||'';if(depth===3){sub='2_'+subDf+'_0000';}else{sub='2_'+subDf+'_'+fid;}}
+    }else if(group.startsWith('0c')){
+        if(depth===2){sub='0_0000';}
+        else if(depth===3&&!parts[2].startsWith('DF.')){sub='1_'+fid;}
+        else{var subDf=parts[2]||'';if(depth===3){sub='2_'+subDf+'_0000';}else{sub='2_'+subDf+'_'+fid;}}
+    }
+    return group+'_'+sub;
+}
+
+async function readAllFiles(){
+    document.getElementById('btnReadAll').disabled=true;
+    document.getElementById('readAllStatus').textContent='⏳ Reading...';
+    document.getElementById('readAllStatus').style.color='#888';
+    setStatus('actionStatus','','');
+    setStatus('exportStatus','','');
+    var startTime=Date.now();
+    try{
+        var r=await api('/sim/read_all',{});
+        var elapsed=((Date.now()-startTime)/1000).toFixed(1)+'s elapsed';
+        if(r.success){dumpData=r.data;sortedEntries=Object.entries(r.data.files).sort(function(a,b){return sortKey(a[0],a[1]).localeCompare(sortKey(b[0],b[1]));});
+            initCollapseState();renderFileList();setStatus('actionStatus','','');
+            _readCount=_countReadFiles();_readElapsed=elapsed;_updateReadStatus();
+            document.getElementById('readAllStatus').style.color='#888';
+            document.getElementById('btnReadAll').disabled=true;
+            fillIsimInfo(r.data);
+            if(r.export_path){setStatus('exportStatus','✅ Saved to '+r.export_path,'ok');}
+            else{setStatus('exportStatus','⚠️ Auto-export failed','warn');}
+            // Auto-read 6982 files with any verified ADM keys
+            var extraCount=0;
+            for(var ak in admVerified){
+                if(admVerified[ak]&&admKeys[ak]){
+                    extraCount+=await autoRead6982Files(ak,admKeys[ak]);
+                }
+            }
+            if(extraCount>0){
+                _readCount=_countReadFiles();_updateReadStatus();
+            }
+        }else{document.getElementById('readAllStatus').textContent='❌ '+(r.error||'Error');document.getElementById('readAllStatus').style.color='#c0392b';document.getElementById('btnReadAll').disabled=false;}
+    }catch(ex){document.getElementById('readAllStatus').textContent='❌ '+ex.message;document.getElementById('readAllStatus').style.color='#c0392b';document.getElementById('btnReadAll').disabled=false;}
+}
+
+function applyFilter(){document.getElementById('filterClear').style.display=document.getElementById('fileFilter').value?'inline':'none';renderFileList();}
+function clearFilter(){document.getElementById('fileFilter').value='';document.getElementById('filterClear').style.display='none';renderFileList();}
+
+function renderFileList(){
+    var tbody=document.getElementById('fileListBody');tbody.innerHTML='';
+    var q=(document.getElementById('fileFilter').value||'').trim().toUpperCase();
+    // When searching, collect paths that match + all their parent DF paths
+    var visiblePaths=null;
+    if(q){
+        visiblePaths={};
+        for(var i=0;i<sortedEntries.length;i++){
+            var p=sortedEntries[i][0],f=sortedEntries[i][1];
+            var fname=pathCols(f).toUpperCase();
+            var ffid=getFidPath(p).toUpperCase();
+            if(fname.indexOf(q)>=0||ffid.indexOf(q)>=0){
+                visiblePaths[p]=true;
+                // Add all parent DF paths
+                var parts=p.split('/');
+                for(var j=1;j<parts.length;j++)visiblePaths[parts.slice(0,j).join('/')]=true;
+            }
+        }
+    }
+    for(var i=0;i<sortedEntries.length;i++){
+        var path=sortedEntries[i][0],fd=sortedEntries[i][1];
+        var fid=getFidPath(path),ft=getFt(fd),typeCol=ft==='DF'?((fd.fcp||{}).df_name?'ADF':'DF'):(SMAP[getStruct(fd)]||'');
+        var fcp=fd.fcp||{},size=fcp.file_size||'',numRec=(fcp.file_descriptor||{}).num_of_rec||'';
+        var arrRec=((fcp.security_attrib_referenced||{}).ef_arr_record_nr);
+        var arrVal=(arrRec!=null&&arrRec!==undefined)?arrRec:'';
+        var cols=pathCols(fd);
+        if(visiblePaths&&!visiblePaths[path])continue;
+        // Check if hidden by collapsed parent DF (direct parent only)
+        if(!q){
+            var parts=path.split('/');
+            var hidden=false;
+            if(parts.length>=2){
+                var parentPath=parts.slice(0,-1).join('/');
+                if(_collapsedDFs[parentPath]&&ft!=='DF'){hidden=true;}
+            }
+            if(hidden)continue;
+        }
+        var tr=document.createElement('tr');
+        var isAdf=ft==='DF'&&!!(fd.fcp||{}).df_name;
+        var isMf=path==='MF';
+        var isTopLevel=isMf||isAdf;
+        if(ft==='DF'){tr.className=isTopLevel?'df-row':'df-sub-row';}
+        if(fd.error&&!fd.bytes)tr.style.color='#aaa';
+        // Indentation: MF/ADF=0, their children=1 level, deeper=+1
+        var name=cols;
+        var depth=(fd.path||[]).length;
+        var parentIsAdf=depth>=2&&dumpData&&dumpData.files[path.split('/').slice(0,2).join('/')]&&(dumpData.files[path.split('/').slice(0,2).join('/')]||{}).fcp&&(dumpData.files[path.split('/').slice(0,2).join('/')]||{}).fcp.df_name;
+        var visualDepth;
+        if(isTopLevel){visualDepth=0;}
+        else if(parentIsAdf){visualDepth=depth-2;}
+        else{visualDepth=depth-1;}
+        var indent=visualDepth*12;
+        if(ft!=='DF')indent+=2;
+        var nameHtml;
+        if(ft==='DF'){
+            var collapsed=!!_collapsedDFs[path];
+            var icon=collapsed?'▶ 📁':'▼ 📂';
+            nameHtml='<span style="padding-left:'+indent+'px"><span class="df-toggle" data-path="'+path+'" style="cursor:pointer;user-select:none;font-size:0.70rem;line-height:1" onclick="toggleDF(event,this)">'+icon+'</span> '+name+'</span>';
+        }else{
+            nameHtml='<span style="padding-left:'+(indent+20)+'px">'+name+'</span>';
+        }
+        tr.innerHTML='<td>'+nameHtml+'</td><td class="cc">'+fid+'</td><td class="cc">'+typeCol+'</td><td class="cc">'+arrVal+'</td><td class="cr">'+size+'</td><td class="cr">'+numRec+'</td>';
+        tr.setAttribute('data-idx',i);
+        tr.onclick=function(){
+            document.querySelectorAll('#fileListBody tr.selected').forEach(function(r){r.classList.remove('selected');});
+            this.classList.add('selected');
+            var idx=parseInt(this.getAttribute('data-idx'));
+            selectedPath=sortedEntries[idx][0];selectedFd=sortedEntries[idx][1];
+            if(selectedFd.decoded)selectedFd._ursp_decoded=selectedFd.decoded;
+            showDetail(selectedPath,selectedFd);
+            updateInlineDecode(selectedPath,selectedFd);
+            updateDetailButtons({
+                isEf:getFt(selectedFd)==='EF',
+                is6982:selectedFd.error&&selectedFd.error.sw_actual==='6982',
+                is6A82:selectedFd.error&&selectedFd.error.sw_actual==='6a82',
+                isOffline:isOfflineMode,
+                path:selectedPath,
+                fd:selectedFd
+            });
+        };
+        tbody.appendChild(tr);
+    }
+}
+function toggleDF(e,el){
+    e.stopPropagation();
+    var path=el.getAttribute('data-path');
+    _collapsedDFs[path]=!_collapsedDFs[path];
+    renderFileList();
+}
+function collapseAll(){
+    for(var i=0;i<sortedEntries.length;i++){
+        var fd=sortedEntries[i][1];
+        if(getFt(fd)==='DF')_collapsedDFs[sortedEntries[i][0]]=true;
+    }
+    renderFileList();
+}
+function expandAll(){
+    _collapsedDFs={};
+    renderFileList();
+}
+function initCollapseState(){
+    _collapsedDFs={};
+    // Collapse all DFs under MF (not ADF), keep ADF sub-DFs expanded
+    for(var i=0;i<sortedEntries.length;i++){
+        var p=sortedEntries[i][0],fd=sortedEntries[i][1];
+        if(getFt(fd)!=='DF')continue;
+        if(p==='MF')continue; // MF itself stays expanded
+        if((fd.fcp||{}).df_name)continue; // ADF stays expanded
+        // Check if this DF is under MF (not under ADF)
+        var parts=p.split('/');
+        if(parts.length>=2&&parts[0]==='MF'&&!parts[1].startsWith('ADF.')){
+            _collapsedDFs[p]=true;
+        }
+    }
+}
+
+function showDetail(path,fd){
+    var rawView=document.getElementById('inlineRawView');
+    _renderRawView(rawView,fd);
+}
+
+/* === File Contents Panel === */
+function isUrspFile(path){return path&&path.indexOf('EF.URSP')>=0;}
+
+function renderValueTree(val,prefix,cont){
+    var lines=[];
+    if(Array.isArray(val)){
+        for(var i=0;i<val.length;i++){var p=i<val.length-1?'├─ ':'└─ ';lines.push(prefix+cont+'   '+p+val[i]);}
+    }else if(val&&typeof val==='object'){
+        var items=Object.keys(val);
+        for(var i=0;i<items.length;i++){var p=i<items.length-1?'├─ ':'└─ ';lines.push(prefix+cont+'   '+p+items[i]+' = '+val[items[i]]);}
+    }
+    return lines;
+}
+
+function formatUrspTree(normalized){
+    if(!normalized||!normalized['URSP rules'])return'';
+    var result=['URSP Rules'];
+    var rules=normalized['URSP rules'];
+    for(var ri=0;ri<rules.length;ri++){
+        var rule=rules[ri],pv=rule['Precedence value'];
+        var rp=ri<rules.length-1?'├─ ':'└─ ',rc=ri<rules.length-1?'│ ':'  ';
+        result.push(rp+'URSP_'+ri);
+        result.push(rc+'├─ Precedence Value = '+pv);
+        var tdList=rule['Traffic descriptor'];
+        var isMatchAll=tdList.length===1&&tdList[0].type==='Match-all';
+        if(!tdList.length||isMatchAll){result.push(rc+'├─ Traffic Descriptor = Match-all');}
+        else{
+            result.push(rc+'├─ Traffic Descriptor');
+            for(var ti=0;ti<tdList.length;ti++){
+                var td=tdList[ti],tp=ti<tdList.length-1?'├─ ':'└─ ',tc=ti<tdList.length-1?'│ ':'  ';
+                var tv=td.value;
+                if(td.type==='Match-all'){result.push(rc+'│ '+tp+td.type);}
+                else if(tv&&typeof tv==='object'){result.push(rc+'│ '+tp+td.type);result=result.concat(renderValueTree(tv,rc+'│ ',tc));}
+                else{result.push(rc+'│ '+tp+td.type+' = '+tv);}
+            }
+        }
+        var rsdList=rule['Route selection descriptor list'];
+        result.push(rc+'└─ Route selection descriptor list');
+        for(var si=0;si<rsdList.length;si++){
+            var rsd=rsdList[si],sp=si<rsdList.length-1?'├─ ':'└─ ',sc=si<rsdList.length-1?'│ ':'  ';
+            var conts=rsd['Route selection descriptor contents'];
+            result.push(rc+'   '+sp+'RSD_'+si);
+            result.push(rc+'   '+sc+'├─ Precedence value = '+rsd['Precedence value']);
+            result.push(rc+'   '+sc+'└─ Route selection descriptor contents');
+            for(var ci=0;ci<conts.length;ci++){
+                var comp=conts[ci],cp=ci<conts.length-1?'├─ ':'└─ ',cc=ci<conts.length-1?'│ ':'  ';
+                var cv=comp.value;
+                if(cv===undefined||cv===null){result.push(rc+'   '+sc+'   '+cp+comp.type);}
+                else if(cv&&typeof cv==='object'){
+                    result.push(rc+'   '+sc+'   '+cp+comp.type);
+                    var items=Object.keys(cv);
+                    for(var vi=0;vi<items.length;vi++){var vp=vi<items.length-1?'├─ ':'└─ ';result.push(rc+'   '+sc+'   '+cc+'  '+vp+items[vi]+' = '+cv[items[vi]]);}
+                }else{result.push(rc+'   '+sc+'   '+cp+comp.type+' = '+cv);}
+            }
+        }
+    }
+    return result.join('\n');
+}
+
+function syntaxHLJson(json){
+    if(!json)return'';
+    return'<pre class="json-hl">'+json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+        function(m){var c='json-number';if(/^"/.test(m)){c=/:$/.test(m)?'json-key':'json-string';}
+        else if(/true|false/.test(m)){c='json-boolean';}else if(/null/.test(m)){c='json-null';}
+        return'<span class="'+c+'">'+m+'</span>';})+'</pre>';
+}
+
+/* === Inline Decode Panel === */
+function isPlmnFile(path){
+    if(!path)return false;
+    var plmnNames=['EF.PLMNwAcT','EF.HPLMNwAcT','EF.OPLMNwAcT','EF.PLMNsel','EF.FPLMN','EF.EHPLMN','EF.HPLMNwAcT'];
+    for(var i=0;i<plmnNames.length;i++){if(path.endsWith(plmnNames[i]))return true;}
+    return false;
+}
+
+function parsePlmnFromBytes(bytesHex,hasAcT){
+    if(!bytesHex||typeof bytesHex!=='string')return[];
+    var hex=bytesHex.toUpperCase().replace(/\s/g,'');
+    var step=hasAcT?10:6;
+    var rows=[];
+    for(var i=0;i+step<=hex.length;i+=step){
+        var chunk=hex.substr(i,step);
+        if(chunk.substr(0,6)==='FFFFFF'){
+            rows.push({mcc:'-',mnc:'-',act:hasAcT?'-':''});
+            continue;
+        }
+        // Nibble-swap BCD: byte0=D1D0, byte1=D3D2, byte2=D5D4
+        var d=[];for(var j=0;j<6;j++)d.push(chunk.charAt(j));
+        // MCC = d[1] d[0] d[3]  (byte0_lo, byte0_hi, byte1_lo)
+        var mcc=d[1]+d[0]+d[3];
+        // MNC = d[5]+d[4] + (d[2] if not F)  (byte2_lo, byte2_hi, byte1_hi)
+        var mnc=d[5]+d[4];
+        if(d[2]!=='F')mnc+=d[2];
+        var act=hasAcT?chunk.substr(6,4):'';
+        rows.push({mcc:mcc,mnc:mnc,act:act});
+    }
+    return rows;
+}
+
+function renderPlmnTable(rows,hasAcT){
+    var cs='padding:3px 12px 3px 6px;text-align:left;width:50px';
+    var hs='padding:4px 12px 4px 6px;text-align:left;width:50px';
+    var html='<table class="rec-table" style="margin:0;width:auto"><thead><tr><th style="padding:4px 8px;width:38px">#</th><th style="'+hs+'">MCC</th><th style="'+hs+'">MNC</th>';
+    if(hasAcT)html+='<th style="'+hs+'">AcT</th>';
+    html+='</tr></thead><tbody>';
+    for(var i=0;i<rows.length;i++){
+        html+='<tr><td style="padding:3px 8px;width:38px">'+(i+1)+'</td><td style="'+cs+'">'+rows[i].mcc+'</td><td style="'+cs+'">'+rows[i].mnc+'</td>';
+        if(hasAcT)html+='<td style="'+cs+'">'+rows[i].act+'</td>';
+        html+='</tr>';
+    }
+    html+='</tbody></table>';
+    return html;
+}
+
+function updateInlineDecode(path,fd){
+    var treeView=document.getElementById('inlineTreeView');
+    var jsonView=document.getElementById('inlineJsonView');
+    var rawView=document.getElementById('inlineRawView');
+    var treeRaw=document.getElementById('inlineTreeRaw');
+    var jsonRaw=document.getElementById('inlineJsonRaw');
+    var box=document.getElementById('inlineDecodeBox');
+    var toggle=document.getElementById('inlineDecodeToggle');
+
+    // Remove any PLMN/Service/ACC table that was previously inserted
+    var oldPlmn=document.getElementById('inlinePlmnTable');
+    if(oldPlmn)oldPlmn.remove();
+    var oldSvc=document.getElementById('inlineSvcTable');
+    if(oldSvc)oldSvc.remove();
+    var oldAcc=document.getElementById('inlineAccTable');
+    if(oldAcc)oldAcc.remove();
+    var oldArr=document.getElementById('inlineArrTable');
+    if(oldArr)oldArr.remove();
+
+    // Ensure core elements are back in the box (they may have been detached)
+    if(!box.contains(treeView)){box.appendChild(treeView);}
+    if(!box.contains(jsonView)){box.appendChild(jsonView);}
+    if(!box.contains(rawView)){box.appendChild(rawView);}
+    if(!box.contains(treeRaw)){box.appendChild(treeRaw);}
+    if(!box.contains(jsonRaw)){box.appendChild(jsonRaw);}
+
+    // Reset: restore last selected view mode
+    _isUrspDecode=false;
+    switchInlineView(_lastViewMode);
+
+    // Update Raw view
+    _renderRawView(rawView,fd);
+
+    if(!fd||getFt(fd)!=='EF'){
+        toggle.style.display='none';
+        document.getElementById('plmnToggle').style.display='none';
+        treeView.innerHTML='';treeView.style.display='none';
+        jsonView.innerHTML='';jsonView.style.display='none';
+        rawView.innerHTML='';rawView.style.display='none';
+        treeRaw.value='';jsonRaw.value='';
+        return;
+    }
+
+    // PLMN table view
+    if(isPlmnFile(path)&&fd.bytes){
+        var hasAcT=path.indexOf('wAcT')>=0;
+        var rawHex;
+        if(typeof fd.bytes==='string'){rawHex=fd.bytes.toUpperCase();}
+        else if(Array.isArray(fd.bytes)){rawHex=fd.bytes.join('').toUpperCase();}
+        else{rawHex='';}
+        if(rawHex){
+            var rows=parsePlmnFromBytes(rawHex,hasAcT);
+            treeView.style.display='none';jsonView.style.display='none';
+            var plmnDiv=document.createElement('div');
+            plmnDiv.id='inlinePlmnTable';
+            plmnDiv.innerHTML=renderPlmnTable(rows,hasAcT);
+            box.appendChild(plmnDiv);
+            toggle.style.display='flex';
+            document.getElementById('plmnToggle').style.display='none';
+            if(_lastViewMode==='raw'){
+                plmnDiv.style.display='none';rawView.style.display='block';
+                document.getElementById('inline-toggle-decode').classList.remove('toggle-active');
+                document.getElementById('inline-toggle-raw').classList.add('toggle-active');
+            }else{
+                plmnDiv.style.display='block';rawView.style.display='none';
+                document.getElementById('inline-toggle-decode').classList.add('toggle-active');
+                document.getElementById('inline-toggle-raw').classList.remove('toggle-active');
+            }
+            treeRaw.value='';jsonRaw.value='';
+            return;
+        }
+    }
+
+    toggle.style.display='flex';
+    document.getElementById('plmnToggle').style.display='none';
+
+    // Service Table (UST/IST/EST) view
+    if(isServiceTableFile(path)&&fd.bytes&&typeof fd.bytes==='string'){
+        _renderServiceTableView(path,fd,box,treeView,jsonView,rawView,toggle,treeRaw,jsonRaw);
+        return;
+    }
+
+    // ACC (Access Control Class) table view
+    if(path&&path.endsWith('/EF.ACC')&&fd.body&&typeof fd.body==='object'){
+        _renderAccTableView(fd,box,treeView,jsonView,rawView,toggle,treeRaw,jsonRaw);
+        return;
+    }
+
+    // ARR (Access Rule Reference) table view
+    if(path&&path.endsWith('/EF.ARR')&&fd.body&&Array.isArray(fd.body)){
+        _renderArrTableView(fd,box,treeView,jsonView,rawView,toggle,treeRaw,jsonRaw);
+        return;
+    }
+
+    // URSP special handling — Decode shows Tree format
+    if(isUrspFile(path)){
+        // Try cached decode first
+        if(fd._ursp_decoded&&fd._ursp_decoded['URSP rules']){
+            _isUrspDecode=true;
+            var ts=fd._ursp_decoded.tree||formatUrspTree(fd._ursp_decoded);
+            var js=JSON.stringify(fd._ursp_decoded,null,2);
+            treeView.textContent=ts;jsonView.innerHTML=syntaxHLJson(js);
+            treeRaw.value=ts;jsonRaw.value=js;
+            switchInlineView(_lastViewMode);
+            return;
+        }
+        // Decode from body tag 128 (0x80)
+        var urspValue=fd.body&&(fd.body['128']||fd.body['0x80']||fd.body[128]);
+        if(urspValue){
+            var n=urspValue.length/2;
+            var lh=(n<=127)?('0'+(n).toString(16)).slice(-2):(n<=255)?('81'+('0'+(n).toString(16)).slice(-2)):('82'+('000'+(n).toString(16)).slice(-4));
+            var fullHex='80'+lh+urspValue;
+            api('/sim/decode_ursp',{hex:fullHex}).then(function(r){
+                if(r.success){
+                    fd._ursp_decoded=r;
+                    _isUrspDecode=true;
+                    var ts=r.tree||'';
+                    var js=JSON.stringify(r,null,2);
+                    treeView.textContent=ts;jsonView.innerHTML=syntaxHLJson(js);
+                    treeRaw.value=ts;jsonRaw.value=js;
+                    switchInlineView(_lastViewMode);
+                }else{
+                    // Decode failed — show empty/FF state
+                    var valHex=fullHex.length>6?fullHex.substring(fullHex.length- (parseInt(fullHex.substring(2,4),16)<=0x7f?parseInt(fullHex.substring(2,4),16)*2:0)):'';
+                    var isAllFF=fullHex.replace(/^80[0-9a-fA-F]{2,6}/,'').replace(/[Ff]/g,'').length===0;
+                    if(isAllFF||fullHex.length<=8){
+                        treeView.textContent='(empty — 0xFF)';
+                    }else{
+                        treeView.textContent='⚠️ URSP decode failed: '+(r.error||'unknown error');
+                    }
+                }
+            });
+            treeView.textContent='⏳ Decoding URSP...';treeView.style.display='block';
+            jsonView.style.display='none';rawView.style.display='none';
+            toggle.style.display='flex';document.getElementById('plmnToggle').style.display='none';
+            return;
+        }
+    }
+
+    // Normal EF decoding
+    if(fd.body!==undefined&&fd.body!==null){
+        var displayBody=fd.body;
+        // Single-key object: show just the value
+        if(displayBody&&typeof displayBody==='object'&&!Array.isArray(displayBody)){
+            var keys=Object.keys(displayBody);
+            if(keys.length===1)displayBody=displayBody[keys[0]];
+        }
+        var jsonStr=(typeof displayBody==='string')?displayBody:JSON.stringify(displayBody,null,2);
+        jsonView.innerHTML=(typeof displayBody==='string')?'<span style="font-family:Consolas,monospace;font-size:0.74rem">'+displayBody+'</span>':syntaxHLJson(jsonStr);
+        jsonRaw.value=jsonStr;
+        treeRaw.value='';
+        switchInlineView(_lastViewMode);
+    }else if(fd.error){
+        toggle.style.display='none';
+        var sw=fd.error.sw_actual||'';
+        var msg=fd.error.message||'';
+        var errText=sw?(sw+': '+msg):msg;
+        jsonView.innerHTML='<span style="color:#c0392b;font-size:0.74rem">'+errText+'</span>';
+        jsonView.style.display='block';rawView.style.display='none';
+        treeRaw.value='';jsonRaw.value='';
+    }else{
+        toggle.style.display='none';
+        jsonView.innerHTML='<span style="color:#999;font-size:0.74rem">(no data)</span>';
+        jsonView.style.display='block';rawView.style.display='none';
+        treeRaw.value='';jsonRaw.value='';
+    }
+}
+
+function _renderRawView(rawView,fd){
+    if(!fd){rawView.innerHTML='<span style="color:#999">(no data)</span>';rawView.style.margin='8px';rawView.style.padding='8px';return;}
+    if(fd.error&&!fd.bytes){
+        var errMsg='<span style="color:#c0392b;font-size:0.76rem">'+(fd.error.sw_actual||'ERR')+': '+(fd.error.message||'')+'</span>';
+        if(fd.error.sw_actual==='6982'&&selectedPath&&!isOfflineMode){
+            var readCond=getArrCondition(selectedPath,'read_search_compare');
+            var writeCond=getArrCondition(selectedPath,'update_erase');
+            var infoHtml='<div style="margin-top:10px;padding:10px 12px;background:#fff8f0;border:1px solid #f0d0a0;border-radius:6px;font-size:0.72rem">';
+            infoHtml+='<div style="font-weight:600;color:#d35400;margin-bottom:6px">📋 ARR Access Conditions</div>';
+            if(readCond){
+                var rc=readCond.value||readCond.type;
+                var rcColor=readCond.type==='adm'?'#e67e22':readCond.type==='pin'?'#3498db':'#888';
+                infoHtml+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span style="color:#888;min-width:50px">Read:</span><span style="color:'+rcColor+';font-weight:600">'+rc+'</span>';
+                if(readCond.type==='adm'){
+                    var satisfied=isAdmSatisfied(readCond);
+                    infoHtml+=satisfied?'<span style="color:#27ae60;font-size:0.66rem">✅ Verified</span>':'<span style="color:#c0392b;font-size:0.66rem">❌ Not verified</span>';
+                }
+                infoHtml+='</div>';
+            }
+            if(writeCond){
+                var wc=writeCond.value||writeCond.type;
+                var wcColor=writeCond.type==='adm'?'#e67e22':writeCond.type==='pin'?'#3498db':'#888';
+                infoHtml+='<div style="display:flex;align-items:center;gap:6px"><span style="color:#888;min-width:50px">Update:</span><span style="color:'+wcColor+';font-weight:600">'+wc+'</span>';
+                if(writeCond.type==='adm'){
+                    var satisfied=isAdmSatisfied(writeCond);
+                    infoHtml+=satisfied?'<span style="color:#27ae60;font-size:0.66rem">✅ Verified</span>':'<span style="color:#c0392b;font-size:0.66rem">❌ Not verified</span>';
+                }
+                infoHtml+='</div>';
+            }
+            infoHtml+='</div>';
+            errMsg+=infoHtml;
+        }
+        rawView.innerHTML=errMsg;rawView.style.margin='8px';rawView.style.padding='8px';return;
+    }
+    if(fd.bytes){
+        var b=fd.bytes;
+        if(Array.isArray(b)){
+            var html='<table class="rec-table" style="margin:0;width:100%"><thead><tr><th style="width:38px">#</th><th style="padding:4px 12px 4px 6px;text-align:left">Hex Data</th></tr></thead><tbody>';
+            b.forEach(function(r,i){html+='<tr><td>'+(i+1)+'</td><td style="padding:3px 12px 3px 6px;text-align:left">'+String(r).toUpperCase()+'</td></tr>';});
+            html+='</tbody></table>';rawView.innerHTML=html;rawView.style.margin='0';rawView.style.padding='0';
+        }else if(typeof b==='string'){rawView.innerHTML='<pre class="data-pre" style="margin:0">'+b.toUpperCase()+'</pre>';rawView.style.margin='8px';rawView.style.padding='8px';}
+        else{rawView.innerHTML='<pre class="data-pre" style="margin:0">'+JSON.stringify(b,null,2)+'</pre>';rawView.style.margin='8px';rawView.style.padding='8px';}
+    }else{rawView.innerHTML='<span style="color:#999">(no data)</span>';rawView.style.margin='8px';rawView.style.padding='8px';}
+}
+
+async function _renderServiceTableView(path,fd,box,treeView,jsonView,rawView,toggle,treeRaw,jsonRaw){
+    var efName=path.endsWith('/EF.UST')?'UST':path.endsWith('/EF.IST')?'IST':'EST';
+    var r=await api('/sim/service_map',{ef:efName});
+    if(!r.success||!r.map){return;}
+    var rawHex=(typeof fd.bytes==='string')?fd.bytes.toUpperCase().replace(/\s/g,''):'';
+    var bits=hexToBits(rawHex);
+    var keys=Object.keys(r.map).sort(function(a,b){return parseInt(a)-parseInt(b);});
+    var tblWidth=(efName==='EST')?'auto':'100%';
+    var html='<table class="rec-table" style="margin:0;width:'+tblWidth+'"><thead><tr>'
+        +'<th style="padding:4px 8px;width:38px">#</th>'
+        +'<th style="padding:4px 12px 4px 6px;text-align:left">Service</th>'
+        +'<th style="padding:4px 12px 4px 6px;text-align:left">Status</th>'
+        +'</tr></thead><tbody>';
+    for(var i=0;i<keys.length;i++){
+        var num=keys[i],label=r.map[num],enabled=!!bits[parseInt(num)];
+        var statusStyle=enabled?'color:#27ae60;font-weight:600':'color:#aaa';
+        html+='<tr><td style="padding:3px 8px;width:38px">'+num+'</td>'
+            +'<td style="padding:3px 12px 3px 6px;text-align:left">'+label+'</td>'
+            +'<td style="padding:3px 12px 3px 6px;text-align:left;'+statusStyle+'">'+(enabled?'ON':'OFF')+'</td></tr>';
+    }
+    html+='</tbody></table>';
+    treeView.style.display='none';jsonView.style.display='none';
+    var old=document.getElementById('inlineSvcTable');if(old)old.remove();
+    var svcDiv=document.createElement('div');
+    svcDiv.id='inlineSvcTable';
+    svcDiv.innerHTML=html;
+    box.appendChild(svcDiv);
+    toggle.style.display='flex';
+    document.getElementById('plmnToggle').style.display='none';
+    if(_lastViewMode==='raw'){
+        svcDiv.style.display='none';rawView.style.display='block';
+        document.getElementById('inline-toggle-decode').classList.remove('toggle-active');
+        document.getElementById('inline-toggle-raw').classList.add('toggle-active');
+    }else{
+        svcDiv.style.display='block';rawView.style.display='none';
+        document.getElementById('inline-toggle-decode').classList.add('toggle-active');
+        document.getElementById('inline-toggle-raw').classList.remove('toggle-active');
+    }
+    treeRaw.value='';jsonRaw.value='';
+}
+
+function _renderAccTableView(fd,box,treeView,jsonView,rawView,toggle,treeRaw,jsonRaw){
+    var body=fd.body;
+    var accDesc={'10':'Emergency calls','11':'PLMN use','12':'Security services','13':'Public utilities','14':'Emergency services','15':'PLMN staff'};
+    var keys=Object.keys(body).sort(function(a,b){
+        var na=parseInt(a.replace(/\D/g,''),10),nb=parseInt(b.replace(/\D/g,''),10);
+        return na-nb;
+    });
+    var html='<table class="rec-table" style="margin:0;width:auto"><thead><tr>'
+        +'<th style="padding:4px 8px;width:38px">#</th>'
+        +'<th style="padding:4px 12px 4px 6px;text-align:left">Class</th>'
+        +'<th style="padding:4px 12px 4px 6px;text-align:left">Status</th>'
+        +'</tr></thead><tbody>';
+    for(var i=0;i<keys.length;i++){
+        var k=keys[i],enabled=!!body[k];
+        var num=k.replace(/\D/g,'');
+        var desc=accDesc[num];
+        var label=k+(desc?' ('+desc+')':'');
+        var statusStyle=enabled?'color:#27ae60;font-weight:600':'color:#aaa';
+        html+='<tr><td style="padding:3px 8px;width:38px">'+num+'</td>'
+            +'<td style="padding:3px 12px 3px 6px;text-align:left">'+label+'</td>'
+            +'<td style="padding:3px 12px 3px 6px;text-align:left;'+statusStyle+'">'+(enabled?'ON':'OFF')+'</td></tr>';
+    }
+    html+='</tbody></table>';
+    treeView.style.display='none';jsonView.style.display='none';
+    var old=document.getElementById('inlineAccTable');if(old)old.remove();
+    var accDiv=document.createElement('div');
+    accDiv.id='inlineAccTable';
+    accDiv.innerHTML=html;
+    box.appendChild(accDiv);
+    toggle.style.display='flex';
+    document.getElementById('plmnToggle').style.display='none';
+    if(_lastViewMode==='raw'){
+        accDiv.style.display='none';rawView.style.display='block';
+        document.getElementById('inline-toggle-decode').classList.remove('toggle-active');
+        document.getElementById('inline-toggle-raw').classList.add('toggle-active');
+    }else{
+        accDiv.style.display='block';rawView.style.display='none';
+        document.getElementById('inline-toggle-decode').classList.add('toggle-active');
+        document.getElementById('inline-toggle-raw').classList.remove('toggle-active');
+    }
+    treeRaw.value='';jsonRaw.value='';
+}
+
+function _arrCondLabel(cond){
+    if(!cond)return'-';
+    if(cond.always===null||cond.always===undefined&&Object.keys(cond).length===0)return'ALWAYS';
+    if(cond.never===null)return'NEVER';
+    if(cond.control_reference_template)return cond.control_reference_template;
+    if(cond.or&&Array.isArray(cond.or))return cond.or.map(function(c){return c.control_reference_template||'?';}).join(' | ');
+    return'?';
+}
+function _arrCondColor(label){
+    if(label==='-')return'#ddd';
+    if(label==='ALWAYS')return'#27ae60';
+    if(label==='NEVER')return'#aaa';
+    if(label.indexOf('ADM')>=0&&label.indexOf('PIN')<0)return'#e67e22';
+    if(label.indexOf('PIN')>=0&&label.indexOf('ADM')<0)return'#3498db';
+    if(label.indexOf('PIN')>=0&&label.indexOf('ADM')>=0)return'#8e44ad';
+    return'#888';
+}
+function _arrCondCell(label){
+    return label;
+}
+var _ARR_COLS=['read_search_compare','update_erase','write_append','activate_file_or_record','deactivate_file_or_record'];
+var _ARR_HDR=['Read','Update','Write','Activate','Deactivate'];
+function _parseArrRecord(rec){
+    var row={};
+    for(var i=0;i<_ARR_COLS.length;i++)row[_ARR_COLS[i]]='NEVER';
+    if(!rec||!Array.isArray(rec))return row;
+    for(var r=0;r<rec.length;r++){
+        var rule=rec[r];
+        if(!Array.isArray(rule)||rule.length<2)continue;
+        var am=rule[0],cond=rule[1];
+        if(!am||!am.access_mode)continue;
+        if(am.command_header)continue;
+        var label=_arrCondLabel(cond);
+        for(var m=0;m<am.access_mode.length;m++){
+            var mode=am.access_mode[m];
+            if(row[mode]==='NEVER')row[mode]=label;
+        }
+    }
+    return row;
+}
+function _renderArrTableView(fd,box,treeView,jsonView,rawView,toggle,treeRaw,jsonRaw){
+    var records=fd.body;
+    var html='<table class="rec-table" style="table-layout:fixed"><thead><tr>';
+    html+='<th style="width:38px">#</th>';
+    for(var h=0;h<_ARR_HDR.length;h++)html+='<th>'+_ARR_HDR[h]+'</th>';
+    html+='</tr></thead><tbody>';
+    for(var i=0;i<records.length;i++){
+        var rec=records[i];
+        var recNum=(i+1);
+        if(!rec||!Array.isArray(rec)||rec.length===0){
+            html+='<tr><td>'+recNum+'</td>';            for(var h=0;h<_ARR_COLS.length;h++)html+='<td>-</td>';
+            html+='</tr>';
+            continue;
+        }
+        var row=_parseArrRecord(rec);
+        html+='<tr><td>'+recNum+'</td>';
+        for(var h=0;h<_ARR_COLS.length;h++)html+='<td>'+_arrCondCell(row[_ARR_COLS[h]])+'</td>';
+        html+='</tr>';
+    }
+    html+='</tbody></table>';
+    treeView.style.display='none';jsonView.style.display='none';
+    var old=document.getElementById('inlineArrTable');if(old)old.remove();
+    var arrDiv=document.createElement('div');
+    arrDiv.id='inlineArrTable';
+    arrDiv.innerHTML=html;
+    box.appendChild(arrDiv);
+    // Use common Decode/Raw toggle — Decode shows ARR table, Raw shows common rawView
+    toggle.style.display='flex';
+    document.getElementById('plmnToggle').style.display='none';
+    _isUrspDecode=false;
+    if(_lastViewMode==='raw'){
+        arrDiv.style.display='none';rawView.style.display='block';
+        document.getElementById('inline-toggle-decode').classList.remove('toggle-active');
+        document.getElementById('inline-toggle-raw').classList.add('toggle-active');
+    }else{
+        arrDiv.style.display='block';rawView.style.display='none';
+        document.getElementById('inline-toggle-decode').classList.add('toggle-active');
+        document.getElementById('inline-toggle-raw').classList.remove('toggle-active');
+    }
+    treeRaw.value='';jsonRaw.value='';
+}
+
+var _isUrspDecode=false;
+var _lastViewMode='decode';
+function switchInlineView(mode){
+    _lastViewMode=mode;
+    var tv=document.getElementById('inlineTreeView'),jv=document.getElementById('inlineJsonView'),rv=document.getElementById('inlineRawView');
+    var dl=document.getElementById('inline-toggle-decode'),rl=document.getElementById('inline-toggle-raw');
+    var customDivs=[document.getElementById('inlineArrTable'),document.getElementById('inlinePlmnTable'),document.getElementById('inlineSvcTable'),document.getElementById('inlineAccTable')];
+    var hasCustom=false;
+    tv.style.display='none';jv.style.display='none';rv.style.display='none';
+    customDivs.forEach(function(d){if(d){d.style.display='none';hasCustom=true;}});
+    dl.classList.remove('toggle-active');rl.classList.remove('toggle-active');
+    if(mode==='raw'){rv.style.display='block';rl.classList.add('toggle-active');}
+    else{
+        if(hasCustom){customDivs.forEach(function(d){if(d)d.style.display='block';});}
+        else if(_isUrspDecode){tv.style.display='block';}
+        else{jv.style.display='block';}
+        dl.classList.add('toggle-active');
+    }
+}
+
+function switchPlmnView(mode){
+    _lastViewMode=mode==='raw'?'raw':'decode';
+    var tl=document.getElementById('plmn-toggle-table'),rl=document.getElementById('plmn-toggle-raw');
+    tl.classList.remove('toggle-active');rl.classList.remove('toggle-active');
+    // PLMN
+    var tc=document.getElementById('plmnTableContent'),rc=document.getElementById('plmnRawContent');
+    if(tc&&rc){
+        if(mode==='raw'){tc.style.display='none';rc.style.display='block';}
+        else{tc.style.display='block';rc.style.display='none';}
+    }
+    // Service Table
+    var sc=document.getElementById('svcTableContent'),sr=document.getElementById('svcRawContent');
+    if(sc&&sr){
+        if(mode==='raw'){sc.style.display='none';sr.style.display='block';}
+        else{sc.style.display='block';sr.style.display='none';}
+    }
+    // ACC Table
+    var ac=document.getElementById('accTableContent'),ar=document.getElementById('accRawContent');
+    if(ac&&ar){
+        if(mode==='raw'){ac.style.display='none';ar.style.display='block';}
+        else{ac.style.display='block';ar.style.display='none';}
+    }
+    if(mode==='raw'){rl.classList.add('toggle-active');}
+    else{tl.classList.add('toggle-active');}
+}
+
+function _tableToTsv(container){
+    var table=container.querySelector('table');
+    if(!table)return container.innerText||container.textContent||'';
+    var lines=[];
+    table.querySelectorAll('tr').forEach(function(tr){
+        var cells=[];
+        tr.querySelectorAll('th,td').forEach(function(c){cells.push((c.innerText||c.textContent||'').trim());});
+        lines.push(cells.join('\t'));
+    });
+    return lines.join('\n');
+}
+
+function copyInlineDecode(btn){
+    var rv=document.getElementById('inlineRawView'),jv=document.getElementById('inlineJsonView');
+    var customDivs=[document.getElementById('inlinePlmnTable'),document.getElementById('inlineSvcTable'),document.getElementById('inlineAccTable'),document.getElementById('inlineArrTable')];
+    var text;
+    // Raw mode: copy from rawView
+    if(rv&&rv.style.display!=='none'){
+        text=rv.innerText||rv.textContent||'';
+    }
+    // Custom table mode: copy as TSV
+    else{
+        var customDiv=null;
+        customDivs.forEach(function(d){if(d&&d.style.display!=='none')customDiv=d;});
+        if(customDiv){text=_tableToTsv(customDiv);}
+        else if(_isUrspDecode){text=document.getElementById('inlineTreeRaw').value;}
+        else{text=document.getElementById('inlineJsonRaw').value;}
+    }
+    navigator.clipboard.writeText(text).then(function(){btn.textContent='✓ Copied';setTimeout(function(){btn.textContent='📋 Copy';},1500);});
+}
+
+
+/* === ADM Verification Popup === */
+function openAdmPopup(){
+    // Reset all rows to current state
+    var rows=document.querySelectorAll('.adm-row');
+    rows.forEach(function(row){
+        var key=row.getAttribute('data-key');
+        var input=row.querySelector('.adm-input');
+        var btn=row.querySelector('.adm-verify-btn');
+        var count=row.querySelector('.adm-count');
+        if(admVerified[key]){
+            input.value=admKeys[key];input.readOnly=true;
+            btn.textContent='Verified';btn.disabled=true;btn.style.background='linear-gradient(45deg,#27ae60,#2ecc71)';btn.style.color='white';
+            count.textContent='(16/16)';
+        }else{
+            input.value=admKeys[key]||'';input.readOnly=false;
+            btn.textContent='Verify';btn.disabled=!(input.value.replace(/\s/g,'').length===16&&/^[0-9a-fA-F]+$/.test(input.value.replace(/\s/g,'')));
+            btn.style.background='';btn.style.color='';
+            var v=input.value.replace(/\s/g,'');count.textContent='('+v.length+'/16)';
+        }
+    });
+    document.getElementById('admStatus').style.display='none';
+    document.getElementById('verifyOverlay').classList.add('show');
+    // Auto-fill from test_profile.json
+    var msisdn=document.getElementById('infoMsisdn').textContent.replace(/\(.*\)/,'').trim();
+    if(msisdn&&msisdn!=='-'){
+        api('/sim/test_profile',{msisdn:msisdn}).then(function(r){
+            if(r.success&&r.keys){
+                var keyMap={adm1:'ADM1',adm2:'ADM2',adm3:'ADM3',adm4:'ADM4'};
+                Object.keys(r.keys).forEach(function(k){
+                    var admType=keyMap[k];
+                    if(!admType||admVerified[admType])return;
+                    var row=document.querySelector('.adm-row[data-key="'+admType+'"]');
+                    if(!row)return;
+                    var input=row.querySelector('.adm-input');
+                    if(input&&!input.value){
+                        input.value=r.keys[k];
+                        updateAdmRow(input);
+                    }
+                });
+            }
+        });
+    }
+}
+function closeAdmPopup(){document.getElementById('verifyOverlay').classList.remove('show');}
+function updateAdmRow(input){
+    var row=input.closest('.adm-row');
+    var val=input.value.replace(/\s/g,'');
+    row.querySelector('.adm-count').textContent='('+val.length+'/16)';
+    row.querySelector('.adm-verify-btn').disabled=!(val.length===16&&/^[0-9a-fA-F]+$/.test(val));
+}
+async function doAdmVerify(btn,admType){
+    var row=btn.closest('.adm-row');
+    var input=row.querySelector('.adm-input');
+    var status=document.getElementById('admStatus');
+    var a=input.value.trim();
+    status.innerHTML='<span style="color:#888">⏳ Verifying '+admType+'...</span>';
+    status.style.display='block';
+    btn.disabled=true;
+    var r=await api('/sim/verify_adm',{adm:a,adm_type:admType});
+    if(r.success){
+        admVerified[admType]=true;admKeys[admType]=a;
+        btn.textContent='Verified';btn.style.background='linear-gradient(45deg,#27ae60,#2ecc71)';btn.style.color='white';
+        input.readOnly=true;
+        status.innerHTML='<span style="color:#27ae60">✅ '+admType+' verified successfully</span>';
+        // Update dot indicator
+        var dotIdx={'ADM1':'1','ADM2':'2','ADM3':'3','ADM4':'4'};
+        document.getElementById('admDot'+dotIdx[admType]).style.background='#27ae60';
+        // Refresh Write button for currently selected file
+        if(selectedPath&&selectedFd){
+            var isEf=getFt(selectedFd)==='EF';
+            var is6982=selectedFd.error&&selectedFd.error.sw_actual==='6982';
+            var is6A82=selectedFd.error&&selectedFd.error.sw_actual==='6a82';
+            updateDetailButtons({isEf:isEf,is6982:is6982,is6A82:is6A82,isOffline:isOfflineMode,path:selectedPath,fd:selectedFd});
+        }
+        // Auto-read 6982 files that need this ADM type for read access
+        var extra=await autoRead6982Files(admType,a);
+        if(extra>0){
+            _readCount=_countReadFiles();_updateReadStatus();
+        }
+    }else{
+        status.innerHTML='<span style="color:#c0392b">❌ '+admType+': '+(r.error||'Verification failed')+'</span>';
+        btn.disabled=false;
+    }
+}
+/* Auto-read 6982 files after ADM verify */
+async function autoRead6982Files(admType,admHex){
+    if(!dumpData||!dumpData.files)return;
+    var paths=[];
+    for(var path in dumpData.files){
+        var fd=dumpData.files[path];
+        if(!fd||!fd.error||fd.error.sw_actual!=='6982')continue;
+        if(getFt(fd)!=='EF')continue;
+        var readCond=getArrCondition(path,'read_search_compare');
+        if(!readCond||readCond.type!=='adm')continue;
+        var vals=(readCond.value||'').split(' | ');
+        for(var i=0;i<vals.length;i++){
+            if(vals[i].trim()===admType){paths.push(path);break;}
+        }
+    }
+    if(paths.length===0)return 0;
+    var structures={};
+    for(var i=0;i<paths.length;i++){
+        var fd=dumpData.files[paths[i]];
+        structures[paths[i]]=getStruct(fd);
+    }
+    var r=await api('/sim/read_ef',{adm:admHex,adm_type:admType,paths:paths,structures:structures,log:false});
+    if(r.success&&r.results){
+        var count=0;
+        for(var p in r.results){
+            var rd=r.results[p];
+            if(rd.bytes){
+                var fd=dumpData.files[p];
+                if(fd){fd.bytes=rd.bytes;if(rd.body)fd.body=rd.body;delete fd.error;count++;}
+            }
+        }
+        if(count>0){
+            sortedEntries=Object.entries(dumpData.files).sort(function(a,b){return sortKey(a[0],a[1]).localeCompare(sortKey(b[0],b[1]));});
+            renderFileList();
+            autoSaveDump();
+        }
+        return count;
+    }
+    return 0;
+}
+async function autoSaveDump(){
+    if(!dumpData)return;
+    dumpData.admVerified=JSON.parse(JSON.stringify(admVerified));
+    try{await api('/sim/export',{data:dumpData});}catch(e){}
+}
+
+/* === Read (6982 files) === */
+async function doReadEf(admHex,admType){
+    var st=getStruct(selectedFd);var structures={};structures[selectedPath]=st;
+    var r=await api('/sim/read_ef',{adm:admHex,adm_type:admType,paths:[selectedPath],structures:structures,log:true});
+    if(r.success&&r.results&&r.results[selectedPath]){
+        var rd=r.results[selectedPath];
+        if(rd.bytes){selectedFd.bytes=rd.bytes;if(rd.body)selectedFd.body=rd.body;delete selectedFd.error;
+            showDetail(selectedPath,selectedFd);renderFileList();
+            updateDetailButtons({isEf:true,is6982:false,is6A82:false,isOffline:false,path:selectedPath,fd:selectedFd});
+            return true;}
+    }
+    return false;
+}
+function onReadClick(){
+    if(!selectedFd)return;
+    var rawView=document.getElementById('inlineRawView');
+    rawView.innerHTML='<span style="color:#888">⏳ Reading...</span>';
+    doReadEf(_getVerifiedAdm(),_getVerifiedAdmType()).then(function(ok){
+        if(!ok){rawView.innerHTML='<span style="color:#c0392b">⚠️ Read failed</span>';}
+    });
+}
+
+/* === Service Table (UST/IST/EST) === */
+var writeServiceMap=null,writeServiceOrig={};
+function isServiceTableFile(path){return path&&(path.endsWith('/EF.UST')||path.endsWith('/EF.IST')||path.endsWith('/EF.EST'));}
+function hexToBits(hex){var bits={};for(var i=0;i<hex.length;i+=2){var byte=parseInt(hex.substr(i,2),16);for(var b=0;b<8;b++){bits[(i/2)*8+b+1]=!!(byte&(1<<b));}}return bits;}
+function bitsToHex(bits,byteLen){var hex='';for(var i=0;i<byteLen;i++){var byte=0;for(var b=0;b<8;b++){if(bits[i*8+b+1])byte|=(1<<b);}hex+=('0'+byte.toString(16)).slice(-2);}return hex.toUpperCase();}
+
+async function renderServiceTable(){
+    var efName=selectedPath.endsWith('/EF.UST')?'UST':selectedPath.endsWith('/EF.IST')?'IST':'EST';
+    var r=await api('/sim/service_map',{ef:efName});
+    if(!r.success||!r.map)return;
+    writeServiceMap=r.map;
+    var rawHex=(typeof selectedFd.bytes==='string')?selectedFd.bytes.toUpperCase().replace(/\s/g,''):'';
+    var bits=hexToBits(rawHex);writeServiceOrig=JSON.parse(JSON.stringify(bits));
+    var html='<table style="width:100%;border-collapse:collapse"><thead><tr><th style="width:40px;padding:3px 6px;text-align:center;background:#f0f2f5;font-size:0.70rem">#</th><th style="padding:3px 8px;text-align:left;background:#f0f2f5;font-size:0.70rem">Service</th><th style="width:80px;padding:3px 10px 3px 6px;text-align:center;background:#f0f2f5;font-size:0.70rem">Status</th></tr></thead><tbody>';
+    var keys=Object.keys(writeServiceMap).sort(function(a,b){return parseInt(a)-parseInt(b);});
+    for(var ki=0;ki<keys.length;ki++){var num=keys[ki],label=writeServiceMap[num],enabled=!!bits[parseInt(num)];
+        html+='<tr style="border-bottom:1px solid #eee"><td style="padding:3px 6px;text-align:center;color:#888;font-family:Consolas,monospace">'+num+'</td><td style="padding:3px 8px;font-size:0.72rem">'+label+'</td><td style="padding:3px 10px 3px 6px;text-align:center"><select data-svc="'+num+'" onchange="onServiceChange()" style="font-size:0.70rem;padding:1px 4px;border:1px solid #ddd;border-radius:3px"><option value="true"'+(enabled?' selected':'')+'>True</option><option value="false"'+(!enabled?' selected':'')+'>False</option></select></td></tr>';}
+    html+='</tbody></table>';document.getElementById('writeServiceList').innerHTML=html;
+}
+function onServiceChange(){
+    var selects=document.querySelectorAll('#writeServiceList select'),bits={};
+    for(var i=0;i<selects.length;i++)bits[parseInt(selects[i].getAttribute('data-svc'))]=(selects[i].value==='true');
+    var changed=false;for(var k in writeServiceOrig)if(!!bits[k]!==!!writeServiceOrig[k]){changed=true;break;}
+    var newHex=bitsToHex(bits,Math.ceil(writeExpectedSize/2));
+    document.getElementById('writeHexInput').value=newHex;
+    document.getElementById('writeHexCount').textContent='('+newHex.length+'/'+writeExpectedSize+')';
+    document.getElementById('writeSubmitBtn').disabled=!changed;
+    document.getElementById('writeRestoreBtn').disabled=!changed;
+    document.getElementById('writeStatus').innerHTML='';
+}
+
+/* === BER-TLV === */
+var tlvTagData={};
+var tlvOrigHex='';
+function parseTlvFromRaw(rawHex){
+    var result=[];if(!rawHex)return result;
+    var hex=rawHex.toUpperCase().replace(/\s/g,'');var i=0;
+    while(i<hex.length-2){
+        var tagStart=i;
+        var tagByte=parseInt(hex.substr(i,2),16);var tagHex=hex.substr(i,2);i+=2;
+        if((tagByte&0x1F)===0x1F){tagHex+=hex.substr(i,2);i+=2;}
+        var lenStart=i;
+        var lenByte=parseInt(hex.substr(i,2),16);i+=2;var dataLen=0;
+        if(lenByte<=0x7F){dataLen=lenByte;}
+        else if(lenByte===0x81){dataLen=parseInt(hex.substr(i,2),16);i+=2;}
+        else if(lenByte===0x82){dataLen=parseInt(hex.substr(i,4),16);i+=4;}
+        var value=hex.substr(i,dataLen*2);i+=dataLen*2;
+        // Store full TLV (tag + length + value)
+        var fullTlv=hex.substring(tagStart,i);
+        result.push({tag:'0x'+tagHex,value:value,fullTlv:fullTlv});
+    }
+    return result;
+}
+function loadTlvFromRaw(){
+    var sel=document.getElementById('writeTlvTagSelect');sel.innerHTML='';
+    document.getElementById('writeTlvHexInput').value='';
+    document.getElementById('writeTlvWriteBtn').disabled=true;
+    document.getElementById('writeTlvRestoreBtn').disabled=true;
+    document.getElementById('writeTlvStatus').innerHTML='';
+    tlvTagData={};
+    var rawHex=selectedFd&&selectedFd.bytes?String(selectedFd.bytes):'';
+    var tlvs=parseTlvFromRaw(rawHex);
+    if(!tlvs.length){sel.innerHTML='<option value="">(no tags)</option>';return;}
+    for(var ti=0;ti<tlvs.length;ti++){
+        var o=document.createElement('option');o.value=tlvs[ti].tag;o.textContent=tlvs[ti].tag;sel.appendChild(o);
+        tlvTagData[tlvs[ti].tag]=tlvs[ti].fullTlv;
+    }
+    sel.value=tlvs[0].tag;
+    document.getElementById('writeTlvHexInput').value=tlvs[0].fullTlv;
+    updateTlvButtons(true);
+}
+function onTlvTagChange(){
+    var tag=document.getElementById('writeTlvTagSelect').value;
+    var val=tlvTagData[tag]||'';
+    document.getElementById('writeTlvHexInput').value=val;
+    updateTlvButtons(!!val);
+}
+function updateTlvButtons(hasData){
+    document.getElementById('writeTlvHexInput').readOnly=false;
+    document.getElementById('writeTlvHexInput').style.opacity='1';
+    tlvOrigHex=document.getElementById('writeTlvHexInput').value.trim().replace(/\s/g,'').toUpperCase();
+    document.getElementById('writeTlvWriteBtn').disabled=true;
+    document.getElementById('writeTlvRestoreBtn').disabled=true;
+}
+function validateTlvHex(hex){
+    /* Validate Full TLV format: tag + BER length + value.
+       Returns {valid, tag, data, error} */
+    if(!hex||hex.length<4)return {valid:false,error:'Too short'};
+    var i=0;
+    var tagByte=parseInt(hex.substr(i,2),16);var tagHex=hex.substr(i,2);i+=2;
+    if((tagByte&0x1F)===0x1F){tagHex+=hex.substr(i,2);i+=2;}
+    if(i>=hex.length)return {valid:false,error:'Missing length'};
+    var lenByte=parseInt(hex.substr(i,2),16);i+=2;var dataLen=0;
+    if(lenByte<=0x7F){dataLen=lenByte;}
+    else if(lenByte===0x81){if(i+2>hex.length)return {valid:false,error:'Incomplete length'};dataLen=parseInt(hex.substr(i,2),16);i+=2;}
+    else if(lenByte===0x82){if(i+4>hex.length)return {valid:false,error:'Incomplete length'};dataLen=parseInt(hex.substr(i,4),16);i+=4;}
+    else{return {valid:false,error:'Invalid BER length byte: '+lenByte.toString(16)};}
+    var actualValueLen=(hex.length-i)/2;
+    if(actualValueLen!==dataLen){return {valid:false,error:'Length mismatch: expected '+dataLen+' bytes, got '+actualValueLen+' bytes'};}
+    return {valid:true,tag:'0x'+tagHex,data:hex.substr(i)};
+}
+function checkTlvChanged(){
+    var cur=document.getElementById('writeTlvHexInput').value.trim().replace(/\s/g,'').toUpperCase();
+    var changed=cur!==tlvOrigHex;
+    var statusEl=document.getElementById('writeTlvStatus');
+    if(cur.length>0&&!/^[0-9A-F]+$/i.test(cur)){
+        statusEl.innerHTML='<span style="color:#c0392b">⚠️ Invalid hex characters</span>';
+        document.getElementById('writeTlvWriteBtn').disabled=true;
+        document.getElementById('writeTlvRestoreBtn').disabled=!changed;
+        return;
+    }
+    if(cur.length>0){
+        // Check tag first before full TLV validation
+        var selTag=document.getElementById('writeTlvTagSelect').value;
+        var selTagHex=selTag?selTag.replace('0x','').replace('0X','').toUpperCase():'';
+        if(selTagHex&&!cur.startsWith(selTagHex)){
+            statusEl.innerHTML='<span style="color:#c0392b">⚠️ Hex data must start with tag '+selTag+'</span>';
+            document.getElementById('writeTlvWriteBtn').disabled=true;
+            document.getElementById('writeTlvRestoreBtn').disabled=!changed;
+            return;
+        }
+        var v=validateTlvHex(cur);
+        if(!v.valid){
+            statusEl.innerHTML='<span style="color:#c0392b">⚠️ '+v.error+'</span>';
+            document.getElementById('writeTlvWriteBtn').disabled=true;
+            document.getElementById('writeTlvRestoreBtn').disabled=!changed;
+            return;
+        }
+    }
+    statusEl.innerHTML='';
+    document.getElementById('writeTlvWriteBtn').disabled=!changed||cur.length===0;
+    document.getElementById('writeTlvRestoreBtn').disabled=!changed;
+}
+function tlvRestore(){
+    document.getElementById('writeTlvHexInput').value=tlvOrigHex;
+    document.getElementById('writeTlvWriteBtn').disabled=true;
+    document.getElementById('writeTlvRestoreBtn').disabled=true;
+    document.getElementById('writeTlvStatus').innerHTML='';
+}
+async function tlvWrite(){
+    var tag=document.getElementById('writeTlvTagSelect').value;
+    var fullHex=document.getElementById('writeTlvHexInput').value.trim().replace(/\s/g,'');
+    if(!tag||!fullHex)return;
+    // Validate TLV format
+    var v=validateTlvHex(fullHex);
+    if(!v.valid){document.getElementById('writeTlvStatus').innerHTML='<span style="color:#c0392b">⚠️ '+v.error+'</span>';return;}
+    // Extract value portion for set_data (pySim set_data expects: tag + value_hex)
+    var data=v.data;
+    document.getElementById('writeTlvStatus').innerHTML='<span style="color:#888">⏳ Writing...</span>';
+    document.getElementById('writeTlvWriteBtn').disabled=true;
+    var r=await api('/sim/write_tlv',{path:selectedPath,tag:tag,data:data,adm:_getVerifiedAdm(),adm_type:_getVerifiedAdmType()});
+    if(r.success){document.getElementById('writeTlvStatus').innerHTML='<span class="status status-ok">✅ Done</span>';tlvTagData[tag]=fullHex.toUpperCase();tlvOrigHex=fullHex.toUpperCase();updateTlvButtons(true);
+        // Re-retrieve to update raw data and decoding
+        var rr;
+        if(_getVerifiedAdm()){rr=await api('/sim/read_tlv',{path:selectedPath,tag:tag,adm:_getVerifiedAdm(),adm_type:_getVerifiedAdmType()});}
+        else{rr=await api('/sim/read_tlv',{path:selectedPath,tag:tag});}
+        if(rr.success&&rr.data){
+            // Update raw bytes with full TLV from retrieve
+            var tagHex=tag.replace('0x','').replace('0X','');
+            var dataLen=rr.data.length/2;
+            var lenHex;
+            if(dataLen<=0x7f){lenHex=('0'+dataLen.toString(16)).slice(-2);}
+            else if(dataLen<=0xff){lenHex='81'+('0'+dataLen.toString(16)).slice(-2);}
+            else{lenHex='82'+('000'+dataLen.toString(16)).slice(-4);}
+            if(selectedFd){
+                selectedFd.bytes=tagHex+lenHex+rr.data;
+                var tagNum=parseInt(tagHex,16);
+                if(!selectedFd.body||typeof selectedFd.body!=='object')selectedFd.body={};
+                selectedFd.body[String(tagNum)]=rr.data;
+                if(rr.decoded)selectedFd._ursp_decoded=rr.decoded;
+                showDetail(selectedPath,selectedFd);
+                updateInlineDecode(selectedPath,selectedFd);
+            }
+        }
+    }
+    else{document.getElementById('writeTlvStatus').innerHTML='<span style="color:#c0392b">'+(r.error||'Write failed')+'</span>';document.getElementById('writeTlvWriteBtn').disabled=false;}
+}
+
+/* === Write Popup === */
+function onWriteClick(){
+    if(!selectedFd)return;
+    openWritePopup();
+}
+function openWritePopup(){
+    var st=getStruct(selectedFd),ft=getFt(selectedFd);
+    if(ft!=='EF')return;
+    document.getElementById('writeEfName').textContent=selectedPath;
+    document.getElementById('writeStatus').textContent='';
+    document.getElementById('writeSubmitBtn').disabled=true;
+    var isTlv=st==='ber_tlv',isLf=st==='linear_fixed'||st==='cyclic',isSvcTable=isServiceTableFile(selectedPath),isAcc=isAccFile(selectedPath),isPlmn=isPlmnFile(selectedPath);
+    document.getElementById('writeTlvSection').style.display=isTlv?'block':'none';
+    document.getElementById('writeHexRow').style.display=(isTlv||isSvcTable||isAcc||isPlmn)?'none':'block';
+    document.getElementById('writeButtonRow').style.display=isTlv?'none':'flex';
+    document.getElementById('writeServiceTable').style.display='none';
+    document.getElementById('writeAccSection').style.display='none';
+    document.getElementById('writePlmnSection').style.display='none';
+    document.getElementById('writeRecordRow').style.display=isLf?'block':'none';
+    if(isLf&&selectedFd.bytes&&Array.isArray(selectedFd.bytes)){
+        var sel=document.getElementById('writeRecordSelect');sel.innerHTML='';
+        for(var i=0;i<selectedFd.bytes.length;i++){var o=document.createElement('option');o.value=i;o.textContent='Record '+(i+1);sel.appendChild(o);}
+        writeOrigHex=String(selectedFd.bytes[0]||'').toUpperCase().replace(/\s/g,'');
+        document.getElementById('writeHexInput').value=writeOrigHex;
+        var recLen=(selectedFd.fcp||{}).file_descriptor||{};
+        writeExpectedSize=(recLen.record_len||0)*2;
+    }else if(!isTlv){
+        var raw='';if(selectedFd.bytes){raw=typeof selectedFd.bytes==='string'?selectedFd.bytes:JSON.stringify(selectedFd.bytes);}
+        writeOrigHex=raw.toUpperCase().replace(/\s/g,'');
+        document.getElementById('writeHexInput').value=writeOrigHex;
+        writeExpectedSize=((selectedFd.fcp||{}).file_size||0)*2;
+    }
+    var expBytes=Math.ceil(writeExpectedSize/2);
+    document.getElementById('writeEfSize').textContent='('+expBytes+' Bytes)';
+    checkWriteChanged();
+    document.getElementById('writeOverlay').classList.add('show');
+    if(isSvcTable){document.getElementById('writeServiceTable').style.display='block';renderServiceTable();}
+    if(isAcc){document.getElementById('writeAccSection').style.display='block';renderAccEditor();}
+    if(isPlmn){document.getElementById('writePlmnSection').style.display='flex';renderPlmnEditor();}
+    if(isTlv){loadTlvFromRaw();}
+}
+function closeWritePopup(){document.getElementById('writeOverlay').classList.remove('show');}
+
+function onWriteRecordChange(){
+    var idx=parseInt(document.getElementById('writeRecordSelect').value);
+    if(selectedFd&&selectedFd.bytes&&Array.isArray(selectedFd.bytes)){
+        writeOrigHex=String(selectedFd.bytes[idx]||'').toUpperCase().replace(/\s/g,'');
+        document.getElementById('writeHexInput').value=writeOrigHex;
+        document.getElementById('writeSubmitBtn').disabled=true;
+        document.getElementById('writeStatus').innerHTML='';
+    }
+}
+function checkWriteChanged(){
+    var cur=document.getElementById('writeHexInput').value.toUpperCase().replace(/\s/g,'');
+    var changed=cur!==writeOrigHex;
+    document.getElementById('writeStatus').innerHTML='';
+    var sizeOk=true;
+    document.getElementById('writeHexCount').textContent='('+cur.length+'/'+writeExpectedSize+')';
+    document.getElementById('writeRestoreBtn').disabled=!changed;
+    if(writeExpectedSize>0&&cur.length!==writeExpectedSize)sizeOk=false;
+    document.getElementById('writeSubmitBtn').disabled=!changed||!sizeOk;
+}
+function restoreOrigHex(){
+    document.getElementById('writeHexInput').value=writeOrigHex;
+    document.getElementById('writeStatus').innerHTML='';
+    if(isServiceTableFile(selectedPath)&&writeServiceOrig){
+        var selects=document.querySelectorAll('#writeServiceList select');
+        for(var i=0;i<selects.length;i++){var svc=parseInt(selects[i].getAttribute('data-svc'));selects[i].value=writeServiceOrig[svc]?'true':'false';}
+    }
+    if(isAccFile(selectedPath))renderAccEditor();
+    if(isPlmnFile(selectedPath))renderPlmnEditor();
+    checkWriteChanged();
+}
+
+/* === ACC Write Editor === */
+var accOrigBits={};
+function isAccFile(path){return path&&path.endsWith('/EF.ACC');}
+function parseAccBits(hex){
+    var bits={};
+    if(!hex||hex.length<4)return bits;
+    var val=parseInt(hex.substr(0,4),16);
+    for(var i=0;i<16;i++)bits[i]=!!(val&(1<<i));
+    return bits;
+}
+function accBitsToHex(bits){
+    var val=0;
+    for(var i=0;i<16;i++)if(bits[i])val|=(1<<i);
+    return('0000'+val.toString(16).toUpperCase()).slice(-4);
+}
+function renderAccEditor(){
+    var hex=writeOrigHex||'';
+    var bits=parseAccBits(hex);
+    accOrigBits=JSON.parse(JSON.stringify(bits));
+    var accDesc={'10':'Emergency calls','11':'PLMN use','12':'Security services','13':'Public utilities','14':'Emergency services','15':'PLMN staff'};
+    var html='<table class="rec-table" style="width:auto"><thead><tr><th>#</th><th style="text-align:left">Class</th><th style="text-align:left">Status</th></tr></thead><tbody>';
+    for(var i=0;i<16;i++){
+        var desc=accDesc[String(i)];
+        var label='ACC'+i+(desc?' ('+desc+')':'');
+        html+='<tr><td>'+i+'</td><td style="text-align:left">'+label+'</td>';
+        html+='<td style="text-align:left"><select data-acc="'+i+'" onchange="onAccChange()" style="font-size:0.72rem;padding:1px 4px;border:1px solid #ddd;border-radius:3px">';
+        html+='<option value="true"'+(bits[i]?' selected':'')+'>True</option>';
+        html+='<option value="false"'+(!bits[i]?' selected':'')+'>False</option>';
+        html+='</select></td></tr>';
+    }
+    html+='</tbody></table>';
+    document.getElementById('writeAccList').innerHTML=html;
+}
+function onAccChange(){
+    var bits={};
+    var selects=document.querySelectorAll('#writeAccList select');
+    for(var i=0;i<selects.length;i++){bits[parseInt(selects[i].getAttribute('data-acc'))]=(selects[i].value==='true');}
+    var hex=accBitsToHex(bits);
+    document.getElementById('writeHexInput').value=hex;
+    checkWriteChanged();
+}
+
+/* === PLMN Write Editor === */
+var plmnOrigEntries=[],plmnHasAcT=false;
+function parsePlmnList(hex,hasAcT){
+    var step=hasAcT?10:6;
+    var entries=[];
+    for(var i=0;i+step<=hex.length;i+=step){
+        var chunk=hex.substr(i,step);
+        if(chunk.substr(0,6)==='FFFFFF'){entries.push({mcc:'',mnc:'',act:''});continue;}
+        var d=[];for(var j=0;j<6;j++)d.push(chunk.charAt(j));
+        var mcc=d[1]+d[0]+d[3];
+        var mnc=d[5]+d[4];
+        if(d[2]!=='F')mnc+=d[2];
+        var act=hasAcT?chunk.substr(6,4):'';
+        entries.push({mcc:mcc.replace(/F/gi,''),mnc:mnc.replace(/F/gi,''),act:act});
+    }
+    return entries;
+}
+function plmnEditorToHex(){
+    var rows=document.querySelectorAll('#writePlmnList tr[data-idx]');
+    var hex='';
+    for(var i=0;i<rows.length;i++){
+        var inputs=rows[i].querySelectorAll('input');
+        var mcc=inputs[0].value.trim(),mnc=inputs[1].value.trim();
+        var act=inputs.length>2?inputs[2].value.trim().toUpperCase():'';
+        if(!mcc&&!mnc){hex+='FFFFFF';if(plmnHasAcT)hex+=(act||'0000').padEnd(4,'0');continue;}
+        // BCD encode: byte0=MCC2|MCC1, byte1=MNC3|MCC3, byte2=MNC2|MNC1
+        var m=mcc.padEnd(3,'F'),n=mnc.length>=3?mnc:mnc.padEnd(2,'F')+'F';
+        if(mnc.length===3)n=mnc;
+        var b0=m[1]+m[0],b1=(n.length===3?n[2]:'F')+m[2],b2=n[1]+n[0];
+        hex+=b0+b1+b2;
+        if(plmnHasAcT)hex+=(act||'0000').padEnd(4,'0');
+    }
+    return hex.toUpperCase();
+}
+function renderPlmnEditor(){
+    var hex=writeOrigHex||'';
+    plmnHasAcT=selectedPath&&selectedPath.indexOf('wAcT')>=0;
+    var entries=parsePlmnList(hex,plmnHasAcT);
+    plmnOrigEntries=JSON.parse(JSON.stringify(entries));
+    var html='<table class="rec-table" style="width:auto"><thead><tr>';
+    html+='<th>#</th>';
+    html+='<th style="text-align:left">MCC</th>';
+    html+='<th style="text-align:left">MNC</th>';
+    if(plmnHasAcT)html+='<th style="text-align:left">AcT</th>';
+    html+='</tr></thead><tbody>';
+    for(var i=0;i<entries.length;i++){
+        var e=entries[i];
+        html+='<tr data-idx="'+i+'">';
+        html+='<td>'+(i+1)+'</td>';
+        html+='<td style="text-align:left"><input type="text" value="'+e.mcc+'" maxlength="3" oninput="onPlmnEdit()" style="width:40px;border:1px solid #ddd;border-radius:3px;padding:2px 4px;font-family:Menlo,Consolas,monospace;font-size:0.74rem;text-align:center"></td>';
+        html+='<td style="text-align:left"><input type="text" value="'+e.mnc+'" maxlength="3" oninput="onPlmnEdit()" style="width:40px;border:1px solid #ddd;border-radius:3px;padding:2px 4px;font-family:Menlo,Consolas,monospace;font-size:0.74rem;text-align:center"></td>';
+        if(plmnHasAcT)html+='<td style="text-align:left"><input type="text" value="'+e.act+'" maxlength="4" oninput="onPlmnEdit()" style="width:50px;border:1px solid #ddd;border-radius:3px;padding:2px 4px;font-family:Menlo,Consolas,monospace;font-size:0.74rem;text-align:center"></td>';
+        html+='</tr>';
+    }
+    html+='</tbody></table>';
+    document.getElementById('writePlmnList').innerHTML=html;
+    switchPlmnWriteMode('table');
+}
+function onPlmnEdit(){
+    var hex=plmnEditorToHex();
+    document.getElementById('writeHexInput').value=hex;
+    document.getElementById('writePlmnHexInput').value=hex;
+    checkWriteChanged();
+}
+function switchPlmnWriteMode(mode){
+    var tbl=document.getElementById('writePlmnList'),hx=document.getElementById('writePlmnHex');
+    var mt=document.getElementById('plmnModeTable'),mh=document.getElementById('plmnModeHex');
+    if(mode==='hex'){
+        tbl.style.display='none';hx.style.display='block';
+        document.getElementById('writePlmnHexInput').value=document.getElementById('writeHexInput').value;
+        mt.style.background='white';mt.style.color='#555';mh.style.background='#667eea';mh.style.color='white';
+    }else{
+        tbl.style.display='block';hx.style.display='none';
+        mt.style.background='#667eea';mt.style.color='white';mh.style.background='white';mh.style.color='#555';
+    }
+}
+function onPlmnHexInput(){
+    var hex=document.getElementById('writePlmnHexInput').value.toUpperCase().replace(/\s/g,'');
+    document.getElementById('writeHexInput').value=hex;
+    checkWriteChanged();
+}
+
+async function submitWrite(){
+    var hex=document.getElementById('writeHexInput').value.replace(/\s/g,'');
+    var st=getStruct(selectedFd);
+    var isLf=st==='linear_fixed'||st==='cyclic';
+    var recNr=isLf?parseInt(document.getElementById('writeRecordSelect').value)+1:0;
+    document.getElementById('writeStatus').innerHTML='<span style="color:#888">⏳ Writing...</span>';
+    document.getElementById('writeSubmitBtn').disabled=true;
+    var _adm=_getVerifiedAdm(),_admType=_getVerifiedAdmType();
+    var r=await api('/sim/write_ef',{path:selectedPath,hex:hex,adm:_adm,adm_type:_admType,record_nr:recNr,structure:st});
+    if(r.success){
+        writeOrigHex=hex.toUpperCase();
+        if(isServiceTableFile(selectedPath)){
+            var selects=document.querySelectorAll('#writeServiceList select');writeServiceOrig={};
+            for(var si=0;si<selects.length;si++)writeServiceOrig[parseInt(selects[si].getAttribute('data-svc'))]=(selects[si].value==='true');
+        }
+        checkWriteChanged();
+        document.getElementById('writeStatus').innerHTML='<span class="status status-ok">✅ Done</span>';
+        if(isLf&&selectedFd.bytes&&Array.isArray(selectedFd.bytes)){selectedFd.bytes[recNr-1]=hex;}else{selectedFd.bytes=hex;}
+        showDetail(selectedPath,selectedFd);
+        // Re-read decoded
+        if(_adm){
+            var rb={adm:_adm,adm_type:_admType,paths:[selectedPath],structures:{},log:false};
+            rb.structures[selectedPath]=st;
+            var rr=await api('/sim/read_ef',rb);
+            if(rr.success&&rr.results&&rr.results[selectedPath]){
+                var rd=rr.results[selectedPath];
+                if(rd.body)selectedFd.body=rd.body;
+                if(rd.bytes)selectedFd.bytes=rd.bytes;
+                showDetail(selectedPath,selectedFd);
+                updateInlineDecode(selectedPath,selectedFd);
+            }
+        }else{
+            var rr=await api('/sim/read_ef',{paths:[selectedPath],structures:{},log:false});
+            if(rr.success&&rr.results&&rr.results[selectedPath]){
+                var rd=rr.results[selectedPath];
+                if(rd.body)selectedFd.body=rd.body;
+                if(rd.bytes)selectedFd.bytes=rd.bytes;
+                showDetail(selectedPath,selectedFd);
+                updateInlineDecode(selectedPath,selectedFd);
+            }
+        }
+    }else{
+        document.getElementById('writeStatus').innerHTML='<span style="color:#c0392b">'+((r.error||'Write failed'))+'</span>';
+        document.getElementById('writeSubmitBtn').disabled=false;
+    }
+}
+
+/* === Panel Resizer === */
+(function(){
+    var resizer=document.getElementById('resizer'),left=document.getElementById('leftPanel'),right=document.getElementById('rightPanel'),container=document.getElementById('panelContainer'),dragging=false;
+    resizer.addEventListener('mousedown',function(e){dragging=true;e.preventDefault();document.body.style.cursor='col-resize';document.body.style.userSelect='none';});
+    document.addEventListener('mousemove',function(e){if(!dragging)return;var rect=container.getBoundingClientRect();var pct=Math.max(15,Math.min(85,((e.clientX-rect.left)/rect.width)*100));left.style.flex='none';left.style.width=pct+'%';right.style.flex='none';right.style.width=(100-pct)+'%';});
+    document.addEventListener('mouseup',function(){if(dragging){dragging=false;document.body.style.cursor='';document.body.style.userSelect='';}});
+})();
+
+/* === Keyboard Navigation === */
+document.getElementById('fileListScroll').addEventListener('keydown',function(e){
+    if(e.key!=='ArrowDown'&&e.key!=='ArrowUp')return;e.preventDefault();
+    var rows=document.getElementById('fileListBody').querySelectorAll('tr');if(!rows.length)return;
+    var cur=-1;rows.forEach(function(r,i){if(r.classList.contains('selected'))cur=i;});
+    var next=e.key==='ArrowDown'?Math.min(cur+1,rows.length-1):Math.max(cur-1,0);
+    if(next!==cur&&next>=0){rows[next].click();rows[next].scrollIntoView({block:'nearest'});}
+});
+document.getElementById('fileFilter').addEventListener('keydown',function(e){
+    if(e.key!=='ArrowDown'&&e.key!=='ArrowUp')return;e.preventDefault();
+    var rows=document.getElementById('fileListBody').querySelectorAll('tr');if(!rows.length)return;
+    var cur=-1;rows.forEach(function(r,i){if(r.classList.contains('selected'))cur=i;});
+    var next=e.key==='ArrowDown'?Math.min(cur+1,rows.length-1):Math.max(cur-1,0);
+    if(next!==cur&&next>=0){rows[next].click();rows[next].scrollIntoView({block:'nearest'});}
+});
+
+function loadDumpFile(input){
+    if(!input.files||!input.files[0])return;
+    var file=input.files[0];
+    setStatus('actionStatus','⏳ Loading '+file.name+'...','warn');
+    setStatus('connectStatus','','');
+    setStatus('exportStatus','','');
+    document.getElementById('fileListBody').innerHTML='';
+    document.getElementById('inlineRawView').innerHTML='<span style="color:#999">(no data)</span>';
+    dumpData=null;selectedPath=null;selectedFd=null;sortedEntries=[];
+    clearFilter();
+    var reader=new FileReader();
+    reader.onload=function(e){
+        try{
+            var data=JSON.parse(e.target.result);
+            if(!data.files){setStatus('actionStatus','❌ Invalid dump file','err');return;}
+            dumpData=data;
+            sortedEntries=Object.entries(data.files).sort(function(a,b){return sortKey(a[0],a[1]).localeCompare(sortKey(b[0],b[1]));});
+            document.getElementById('infoIccid').textContent=data.iccid||'-';
+            document.getElementById('infoImsi').textContent='-';
+            document.getElementById('infoMsisdn').textContent='-';
+            document.getElementById('infoHplmn').textContent='-';
+            if(data.files){
+                for(var p in data.files){
+                    var fd=data.files[p];
+                    if(p.endsWith('EF.IMSI')&&fd.body&&fd.body.imsi)document.getElementById('infoImsi').textContent=fd.body.imsi;
+                    if(p.endsWith('EF.MSISDN')&&fd.body&&Array.isArray(fd.body)){
+                        for(var i=0;i<fd.body.length;i++){if(fd.body[i]&&fd.body[i].dialing_nr){document.getElementById('infoMsisdn').textContent=fd.body[i].dialing_nr;break;}}
+                    }
+                    if(p.endsWith('EF.HPLMNwAcT')&&fd.bytes&&typeof fd.bytes==='string'){
+                        var raw=fd.bytes.toUpperCase();
+                        if(raw.length>=10&&raw.substr(0,6)!=='FFFFFF'){
+                            var mcc=raw[1]+raw[0]+raw[3],mnc=raw[5]+raw[4],mnc3=raw[2];
+                            if(mnc3!=='F')mnc+=mnc3;
+                            document.getElementById('infoHplmn').textContent=mcc+'/'+mnc+'('+raw.substr(6,4)+')';
+                        }
+                    }
+                }
+            }
+            fillIsimInfo(data);
+            initCollapseState();renderFileList();
+            setStatus('actionStatus','','');
+            document.getElementById('btnReadAll').disabled=true;
+            document.getElementById('btnAdm').disabled=true;
+            document.getElementById('readAllStatus').textContent='Card reader not connected';
+            document.getElementById('readAllStatus').style.color='#ccc';
+            setStatus('connectStatus','✅ Loaded ('+_countReadFiles()+' files)','ok');
+            document.getElementById('admDots').style.color='#ccc';
+            resetDetailButtons();
+            // Restore ADM verified state from dump if available
+            var savedAdm=data.admVerified||{};
+            admVerified={ADM1:!!savedAdm.ADM1,ADM2:!!savedAdm.ADM2,ADM3:!!savedAdm.ADM3,ADM4:!!savedAdm.ADM4};
+            admKeys={ADM1:'',ADM2:'',ADM3:'',ADM4:''};
+            for(var d=1;d<=4;d++)document.getElementById('admDot'+d).style.background=admVerified['ADM'+d]?'#27ae60':'#ddd';
+            isOfflineMode=true;
+        }catch(ex){setStatus('actionStatus','❌ Parse error: '+ex.message,'err');}
+    };
+    reader.readAsText(file);
+    input.value='';
+}
+
+function fillIsimInfo(data){
+    document.getElementById('infoImpi').textContent='-';
+    document.getElementById('infoImpu').textContent='-';
+    if(!data||!data.files)return;
+    for(var p in data.files){
+        var fd=data.files[p];
+        if(p.endsWith('EF.IMPI')&&fd.body&&fd.body.nai){
+            var v=fd.body.nai;document.getElementById('infoImpi').textContent=v;
+        }
+        if(p.endsWith('EF.IMPU')&&fd.body&&Array.isArray(fd.body)){
+            for(var i=0;i<fd.body.length;i++){
+                if(fd.body[i]&&fd.body[i].impu){document.getElementById('infoImpu').textContent=fd.body[i].impu;break;}
+            }
+        }
+    }
+}
+</script>
+</body>
+</html>
